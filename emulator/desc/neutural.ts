@@ -127,9 +127,9 @@ const Data: Description = {
         const rs: {
           [r in Race]?: true
         } = {}
-        await c.player.enum_present(
-          async card => (rs[card.template.race] = true)
-        )
+        await c.player.enum_present(async card => {
+          rs[card.template.race] = true
+        })
         let units: UnitKey[] = []
         if (rs.T) {
           units.push(...Array(c.gold ? 2 : 1).fill('歌利亚'))
@@ -140,6 +140,7 @@ const Data: Description = {
         if (rs.P) {
           units.push(...Array(c.gold ? 2 : 1).fill('龙骑士'))
         }
+        console.log(units)
         await 获得(c, units)
       }),
   鲜血猎手: c =>

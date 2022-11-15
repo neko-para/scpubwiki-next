@@ -4,7 +4,8 @@ import EmuCardTemplate from '@/components/EmuCardTemplate.vue'
 import EmuCard from '@/components/EmuCard.vue'
 import EmuDiscover from '@/components/EmuDiscover.vue'
 import { Game } from '../../../emulator'
-import type { Card, Upgrade } from '../../../data'
+import { AllCard, type CardKey } from '../../../data/pubdata'
+import { getCard, type Card, type Upgrade } from '../../../data'
 import { emuBus } from '@/bus'
 import global from '../data'
 
@@ -16,6 +17,7 @@ const infoId = ref(1)
 const game = new Game()
 const player = game.players[0]
 const discover = ref<(Card | Upgrade)[]>([])
+const discoverCancel = ref<(() => void) | null>(null)
 
 global.player = player
 
@@ -47,13 +49,21 @@ player.refresh = async (place) => {
   }
 }
 
-player.discover = async (items) => {
-  return new Promise<number>(resolve => {
+player.discover = async (items, allow) => {
+  return new Promise<number | false>(resolve => {
     discover.value = items
     const f = async (p: { pos: number }) => {
       emuBus.off('chooseItemDone', f)
       discover.value = []
-      resolve(p.pos)
+      discoverCancel.value = null
+      resolve(p.pos === -1 ? false : p.pos)
+    }
+    if (allow) {
+      discoverCancel.value = () => {
+        emuBus.async_emit('chooseItemDone', {
+          pos: -1
+        })
+      }
     }
     emuBus.on('chooseItemDone', f)
     emuBus.async_emit('chooseItem', {})
@@ -144,13 +154,26 @@ function requestRefresh() {
 
 const cheeted = ref(false)
 
-function cheet() {
+const cheetChoose = ref(false)
+const cheetChooseCard = ref('紧急部署')
+
+function cheetChoosed() {
+  if (AllCard.includes(cheetChooseCard.value as CardKey)) {
+    game.bus.async_emit('obtain-card', {
+      player,
+      cardt: getCard(cheetChooseCard.value as CardKey)
+    })
+  }
+  cheetChoose.value = false
+  handId.value += 1
+}
+
+function cheetResource() {
   player.mine = 999
   player.gas = 999
   infoId.value += 1
   storeId.value += 1
   presId.value += 1
-  cheeted.value = true
 }
 
 </script>
@@ -160,18 +183,35 @@ function cheet() {
     <div class="d-flex">
       <div class="d-flex flex-column">
         <div class="d-flex flex-column" :key="`res-${infoId}`">
-          <span class="text-h6">回合 {{ game.round }}</span>
-          <span class="text-h6">等级 {{ player.level }}</span>
-          <span class="text-h6">升级 {{ player.cost }}</span>
-          <span class="text-h6">晶矿 {{ player.mine }} / {{ player.mineMax }}</span>
-          <span class="text-h6">瓦斯 {{ player.gas }} / 6</span>
+          <span class="text-h6">回合 {{ game.round }} 等级 {{ player.level }} 升级 {{ player.cost }}</span>
+          <span class="text-h6">晶矿 {{ player.mine }} / {{ player.mineMax }} 瓦斯 {{ player.gas }} / 6</span>
         </div>
-        <div class="d-flex mb-4">
+        <div class="d-flex mb-2">
           <v-btn :disabled="model" class="mr-1" @click="requestNextRound()">下一回合</v-btn>
           <v-btn :disabled="model || player.cost > player.mine" class="mr-1" @click="requestUpgrade()">升级</v-btn>
           <v-btn :disabled="model || player.mine < 1" class="mr-1" @click="requestRefresh()">刷新</v-btn>
           <v-btn :disabled="model" class="mr-1" @click="player.lock = !player.lock; storeId += 1">{{ player.lock ? '解锁' : '锁定' }}</v-btn>
-          <v-btn :disabled="model" @click="cheet()" :color="cheeted ? 'red' : 'white'">be a cheeter</v-btn>
+        </div>
+        <div class="d-flex mb-2">
+          <v-btn :disabled="model" @click="cheeted = true" :color="cheeted ? 'red' : 'white'">be a cheeter</v-btn>
+          <template v-if="cheeted">
+            <v-dialog v-model="cheetChoose">
+              <template v-slot:activator="{ props }">
+                <v-btn :disabled="model" v-bind="props">
+                  获取卡牌
+                </v-btn>
+              </template>
+              <v-card>
+                <v-card-text>
+                  <v-autocomplete label="卡牌" v-model="cheetChooseCard" :items="AllCard"></v-autocomplete> 
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn color="primary" @click="cheetChoosed()">确定</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-btn :disabled="model" @click="cheetResource()">获取资源</v-btn>
+          </template>
         </div>
         <div class="d-flex">
           <div class="d-flex flex-column">
@@ -189,7 +229,9 @@ function cheet() {
           <emu-card-template class="mr-2" :pos="0" type="store" :card="undefined" v-for="i in 6 - player.store.length" :key="`store-${player.store.length + i}-${storeId}`"></emu-card-template>
         </div>
         <div class="d-flex mt-auto mb-2">
-          <emu-discover class="mr-2" :pos="0" :key="`discover-@`" :item="null"></emu-discover>
+          <div style="width: 200px" class="d-flex align-center">
+            <v-btn v-if="discoverCancel" @click="discoverCancel && discoverCancel()" class="ml-auto mr-auto" color="red">放弃</v-btn>
+          </div>
           <emu-discover class="mr-2" :pos="i" v-for="(it, i) in discover" :key="`discover-${i}`" :item="it"></emu-discover>
         </div>
       </div>

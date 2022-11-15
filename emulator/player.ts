@@ -119,7 +119,10 @@ export class Player {
 
   choose: () => Promise<number>
   refresh: (place: 'hand' | 'store' | 'present' | 'info') => Promise<void>
-  discover: (item: (Card | Upgrade)[]) => Promise<number>
+  discover: (
+    item: (Card | Upgrade)[],
+    allowCancel: boolean
+  ) => Promise<number | false>
 
   constructor(g: Game) {
     this.bus = new Emitter()
@@ -220,6 +223,7 @@ export class Player {
       this.mine += 1
       await this.sell(ci)
       await this.refresh('info')
+      await this.refresh('store')
       await this.refresh('present')
     })
 
@@ -339,8 +343,15 @@ export class Player {
       this.pres[destroy.pos] = null
     })
 
-    this.bus.on('discover', async ({ item, target }) => {
-      const cho = item[await this.discover(item)]
+    this.bus.on('discover', async ({ item, target, cancel }) => {
+      const rc = await this.discover(item, !!cancel)
+      if (!rc) {
+        if (cancel) {
+          await cancel()
+        }
+        return
+      }
+      const cho = item[rc]
       if (cho.type === 'card') {
         await this.game.bus.async_emit('obtain-card', {
           player: this,
