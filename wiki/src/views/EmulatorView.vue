@@ -4,7 +4,7 @@ import EmuCardTemplate from '@/components/EmuCardTemplate.vue'
 import EmuCard from '@/components/EmuCard.vue'
 import EmuDiscover from '@/components/EmuDiscover.vue'
 import { Game } from '../../../emulator'
-import { getCard, type Card, type CardKey, type Upgrade } from '../../../data'
+import type { Card, Upgrade } from '../../../data'
 import { emuBus } from '@/bus'
 import global from '../data'
 
@@ -152,13 +152,6 @@ function cheet() {
   presId.value += 1
   cheeted.value = true
 }
-
-['死亡之握', '死亡之握'].forEach(u => {
-  game.bus.async_emit('obtain-card', {
-    player,
-    cardt: getCard(u as CardKey)
-  })
-})
 
 </script>
 
