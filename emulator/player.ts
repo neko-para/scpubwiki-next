@@ -345,7 +345,7 @@ export class Player {
 
     this.bus.on('discover', async ({ item, target, cancel }) => {
       const rc = await this.discover(item, !!cancel)
-      if (!rc) {
+      if (rc === false) {
         if (cancel) {
           await cancel()
         }
@@ -366,6 +366,8 @@ export class Player {
           upgrade: cho,
         })
       }
+      item.splice(rc, 1)
+      this.game.pool.drop(item.filter(it => it.type === 'card') as Card[])
     })
 
     this.bus.after('wrap', async ({ unit, info }) => {
@@ -505,7 +507,8 @@ export class Player {
     await this.refresh('present')
     const reward: (Card | Upgrade)[] = this.game.pool.discover(
       c => c.level === Math.min(6, this.level + 1),
-      3
+      3,
+      true
     )
     if (card.upgrades.length < 5) {
       reward.push(

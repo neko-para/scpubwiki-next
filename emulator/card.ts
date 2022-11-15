@@ -275,6 +275,17 @@ export class CardInstance {
       await this.player.refresh('present')
     })
 
+    this.bus.on('round-end', async () => {
+      if (
+        this.template.race === 'T' &&
+        this.infr_type() === InfrType.HighTech
+      ) {
+        await this.post('fast-prod', {
+          card: this,
+        })
+      }
+    })
+
     this.bus.on('incubate', async ({ unit }) => {
       await 相邻两侧(this, async c => {
         if (c.template.race === 'Z') {
@@ -420,7 +431,12 @@ export class CardInstance {
     await this.post('replace-unit', {
       card: this,
       index: [this.locates('反应堆', '科技实验室')],
-      unit: infr === InfrType.Reactor ? '反应堆' : '科技实验室',
+      unit:
+        infr === InfrType.Reactor
+          ? '反应堆'
+          : infr === InfrType.SciLab
+          ? '科技实验室'
+          : '高级科技实验室',
     })
     await this.post('fast-prod', {
       card: this,

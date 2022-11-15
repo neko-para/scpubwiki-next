@@ -38,9 +38,9 @@ function 虫卵牌描述(c: CardInstance) {
     })
 }
 
-function 虫卵牌位(player: Player) {
+async function 虫卵牌位(player: Player) {
   let idx = -1
-  player.enum_present(async c => {
+  await player.enum_present(async c => {
     if (c.name === '虫卵') {
       idx = c.pos
       return true
@@ -53,7 +53,8 @@ async function 注卵(card: CardInstance, unit: UnitKey[]) {
   if (unit.length === 0) {
     return
   }
-  let idx = 虫卵牌位(card.player)
+  let idx = await 虫卵牌位(card.player)
+  console.log(idx)
   if (idx === -1) {
     idx = card.player.pres.findIndex(c => !c)
     if (idx === -1) {
@@ -374,7 +375,7 @@ const Data: Description = {
     $()
       .for(c)
       .bind('round-end', async () => {
-        const idx = 虫卵牌位(c.player)
+        const idx = await 虫卵牌位(c.player)
         if (idx === -1) {
           return
         }

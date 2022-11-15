@@ -31,11 +31,11 @@ export class Pool {
     })
   }
 
-  discover(pred: (card: Card) => boolean, count: number) {
+  discover(pred: (card: Card) => boolean, count: number, unique = false) {
     const nh: Card[] = []
     const f: Card[] = []
     this.heap.forEach(card => {
-      if (pred(card)) {
+      if (pred(card) && !(unique && f.includes(card))) {
         f.push(card)
       } else {
         nh.push(card)
