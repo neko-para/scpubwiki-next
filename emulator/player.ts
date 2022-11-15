@@ -277,9 +277,11 @@ export class Player {
           }
         })
       shuffle(spec)
-      const item = shuffle(comm.concat(spec.slice(1)))
-        .slice(0, spec.length > 0 ? 3 : 4)
-        .concat(spec.slice(0, 1))
+      const firstUpgrade = c.upgrades.length === 0
+      const sp = spec.slice(0, firstUpgrade ? 2 : 1)
+      const item = shuffle(comm.concat(spec.slice(sp.length)))
+        .slice(0, 4 - sp.length)
+        .concat(sp)
       this.gas -= 2
       await this.refresh('info')
       await this.game.bus.async_emit('discover', {

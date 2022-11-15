@@ -197,7 +197,7 @@ function cheetResource() {
           <template v-if="cheeted">
             <v-dialog v-model="cheetChoose">
               <template v-slot:activator="{ props }">
-                <v-btn :disabled="model" v-bind="props">
+                <v-btn :disabled="model" v-bind="props" class="ml-1">
                   获取卡牌
                 </v-btn>
               </template>
@@ -210,7 +210,7 @@ function cheetResource() {
                 </v-card-actions>
               </v-card>
             </v-dialog>
-            <v-btn :disabled="model" @click="cheetResource()">获取资源</v-btn>
+            <v-btn :disabled="model" @click="cheetResource()" class="ml-1">获取资源</v-btn>
           </template>
         </div>
         <div class="d-flex">
