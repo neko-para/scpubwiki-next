@@ -21,7 +21,7 @@ function shuffle<T>(array: T[]): T[] {
   return array
 }
 
-async function wait(time: number) {
+async function wait(time: number): Promise<void> {
   if (time < 0) {
     return
   }
@@ -92,7 +92,7 @@ player.choose = async () => {
   })
 }
 
-player.refresh = async place => {
+async function refreshPlace(place: 'hand' | 'store' | 'present' | 'info') {
   switch (place) {
     case 'hand':
       handId.value += 1
@@ -108,6 +108,8 @@ player.refresh = async place => {
       break
   }
 }
+
+player.refresh = refreshPlace
 
 player.discover = async (items, allow) => {
   return new Promise<number>(resolve => {
@@ -337,12 +339,22 @@ async function loadLog() {
   console.log(log)
   pendingChoice.push(...log.choice[0])
   // game.loadChoice(0, log.choice[0])
+  if (eta < 0) {
+    player.refresh = async () => {}
+  }
   for (const msg of log.msg) {
     await game.loadMsg(msg)
     await doEta()
     if (nextStep) {
       await nextStep()
     }
+  }
+  if (eta < 0) {
+    player.refresh = refreshPlace
+    refreshPlace('info')
+    refreshPlace('hand')
+    refreshPlace('store')
+    refreshPlace('present')
   }
 }
 
