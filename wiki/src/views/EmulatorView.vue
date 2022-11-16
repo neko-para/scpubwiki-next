@@ -31,7 +31,7 @@ async function wait(time: number) {
 }
 
 function doEta() {
-  return wait(Number(route.query.eta || -1))
+  return wait(eta)
 }
 
 const route = useRoute()
@@ -60,6 +60,7 @@ function querySeed() {
 
 const seed = ref(querySeed())
 const pendingChoice: number[] = []
+const eta = Number(route.query.eta || -1)
 
 const handId = ref(1)
 const storeId = ref(1)
@@ -215,6 +216,11 @@ game.bus.async_emit('round-start', {
 })
 
 function requestNextRound() {
+  if (player.lock) {
+    game.poll('$lock', {
+      player,
+    })
+  }
   game.poll('$next_round', {})
 }
 
@@ -319,6 +325,9 @@ function impLog() {
   })
 }
 
+let nextStep: (() => Promise<void>) | null = null
+const doStep = ref<(() => void) | null>(null)
+
 async function loadLog() {
   const log = JSON.parse(
     Buffer.from(
@@ -331,8 +340,21 @@ async function loadLog() {
   for (const msg of log.msg) {
     await game.loadMsg(msg)
     await doEta()
+    if (nextStep) {
+      await nextStep()
+    }
   }
 }
+
+function setSteping() {
+  nextStep = () => {
+    return new Promise(resolve => {
+      doStep.value = resolve
+    })
+  }
+}
+
+// setSteping()
 
 if (route.query.replay) {
   loadLog()
@@ -370,7 +392,7 @@ if (route.query.replay) {
             >刷新</v-btn
           >
           <v-btn :disabled="model" class="mr-1" @click="switchLock()">{{
-            player.lock ? '解锁' : '锁定'
+            '锁定'
           }}</v-btn>
         </div>
         <div class="d-flex mb-2">
@@ -431,6 +453,11 @@ if (route.query.replay) {
               </v-card-actions>
             </v-card>
           </v-dialog>
+          <v-btn class="ml-1" v-if="doStep" @click="doStep && doStep()"
+            >步进</v-btn
+          >
+        </div>
+        <div class="d-flex mb-2">
           <v-btn
             class="ml-1"
             :disabled="model"

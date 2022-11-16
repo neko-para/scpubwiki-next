@@ -133,6 +133,9 @@ const Data: Description = {
       .for(c)
       .bind('post-enter', () =>
         相邻两侧(c, async card => {
+          if (card.template.race !== 'T') {
+            return
+          }
           const taked: UnitKey[] = []
           card.units.forEach((unit, index) => {
             if (index % 3 === 0) {

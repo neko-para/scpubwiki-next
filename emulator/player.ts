@@ -13,6 +13,9 @@ export type PlayerBus = {
   $upgrade: {
     player: Player
   }
+  $lock: {
+    player: Player
+  }
   $refresh: {
     player: Player
   }
@@ -175,6 +178,10 @@ export class Player {
 
     this.bus.on('$upgrade', async () => {
       await this.upgrade()
+    })
+
+    this.bus.on('$lock', async () => {
+      this.lock = true
     })
 
     this.bus.on('$refresh', async () => {
