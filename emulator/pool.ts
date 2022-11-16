@@ -1,5 +1,5 @@
 import { type Card, getCard } from '../data'
-import { AllCard } from '../data/pubdata'
+import { AllCard, type CardKey } from '../data/pubdata'
 import { shuffle } from './utils'
 import type { PossibleLevel } from './types'
 
@@ -12,46 +12,72 @@ const poolCount: Record<PossibleLevel, number> = {
   6: 6,
 }
 
-export class Pool {
-  heap: Card[]
+type HeapType = {
+  [key in CardKey]?: number
+}
 
-  constructor() {
-    this.heap = []
+export class Pool {
+  rheap: HeapType
+
+  constructor(pack: Record<string, boolean> = { 核心: true }) {
+    this.rheap = {}
+
     AllCard.map(c => getCard(c)).forEach(card => {
-      if (!card.pool) {
+      if (!card.pool || !pack[card.pack]) {
         return
       }
       if (card.attr.rare) {
         if (Math.random() <= 0.15) {
-          this.heap.push(card)
+          this.rheap[card.name] = 1
         }
       } else {
-        this.drop(Array(poolCount[card.level as PossibleLevel]).fill(card))
+        this.rheap[card.name] = poolCount[card.level as PossibleLevel]
       }
     })
   }
 
   discover(pred: (card: Card) => boolean, count: number, unique = false) {
-    const nh: Card[] = []
+    const nh: HeapType = {}
     const f: Card[] = []
-    this.heap.forEach(card => {
-      if (pred(card) && !(unique && f.includes(card))) {
-        f.push(card)
+    const mf: Card[] = []
+    Object.keys(this.rheap).forEach(k => {
+      const ck = k as CardKey
+      const card = getCard(ck)
+
+      if (pred(card)) {
+        if (unique) {
+          f.push(card)
+          mf.push(...Array((this.rheap[ck] || 1) - 1).fill(card))
+        } else {
+          f.push(...Array(this.rheap[ck] || 0).fill(card))
+        }
       } else {
-        nh.push(card)
+        nh[ck] = this.rheap[ck]
       }
     })
-    if (f.length < count) {
+    if (f.length + mf.length < count) {
       throw `Heap is not enough!`
     }
+    this.rheap = nh
     shuffle(f)
-    this.heap = nh
+    if (f.length < count) {
+      shuffle(mf)
+      f.push(...mf.slice(0, count - f.length))
+      this.drop(mf.slice(count - f.length))
+    } else {
+      this.drop(mf)
+    }
     this.drop(f.slice(count))
-    shuffle(nh)
     return f.slice(0, count)
   }
 
   drop(card: Card[]) {
-    this.heap.push(...card)
+    card.forEach(c => {
+      let cnt = (this.rheap[c.name] || 0) + 1
+      if (cnt > poolCount[c.level as PossibleLevel]) {
+        cnt = poolCount[c.level as PossibleLevel]
+      }
+      this.rheap[c.name] = cnt
+    })
   }
 }

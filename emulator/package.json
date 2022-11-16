@@ -13,6 +13,6 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@nekosu/async-emitter": "^1.0.0"
+    "@nekosu/async-emitter": "^1.0.1"
   }
 }

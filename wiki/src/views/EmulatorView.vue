@@ -5,16 +5,32 @@ import EmuCard from '@/components/EmuCard.vue'
 import EmuDiscover from '@/components/EmuDiscover.vue'
 import { Game } from '../../../emulator'
 import { AllCard, type CardKey } from '../../../data/pubdata'
-import { getCard, type Card, type Upgrade } from '../../../data'
+import { getCard, order, type Card, type Upgrade } from '../../../data'
 import { emuBus } from '@/bus'
 import global from '../data'
+import { useRouter, useRoute, type LocationQueryValue } from 'vue-router'
+import { shuffle } from '../../../emulator/utils'
+
+const route = useRoute()
+const router = useRouter()
+
+function queryPack() {
+  let p = route.query?.pack as LocationQueryValue
+  const pack: Record<string, boolean> = {
+    核心: true
+  }
+  if (p) {
+    p.split(',').map(s => s.trim()).filter(s => order.pack.includes(s)).forEach(p => pack[p] = true)
+  }
+  return pack
+}
 
 const handId = ref(1)
 const storeId = ref(1)
 const presId = ref(1)
 const infoId = ref(1)
 
-const game = new Game()
+const game = new Game(queryPack())
 const player = game.players[0]
 const discover = ref<(Card | Upgrade)[]>([])
 const discoverCancel = ref<(() => void) | null>(null)
@@ -176,6 +192,29 @@ function cheetResource() {
   presId.value += 1
 }
 
+const packDlg = ref(false)
+const packConfig = ref(queryPack())
+
+function applyPackChange() {
+  router.push({
+    name: 'emulator',
+    query: {
+      pack: Object.keys(packConfig.value).join(','),
+      time: (new Date()).getTime()
+    }
+  })
+}
+
+function genPackConfig() {
+  const res: Record<string, boolean> = {
+    核心: true
+  }
+  shuffle(order.pack.slice(1)).slice(0, 2).forEach(p => {
+    res[p] = true
+  })
+  packConfig.value = res
+}
+
 </script>
 
 <template>
@@ -193,7 +232,24 @@ function cheetResource() {
           <v-btn :disabled="model" class="mr-1" @click="player.lock = !player.lock; storeId += 1">{{ player.lock ? '解锁' : '锁定' }}</v-btn>
         </div>
         <div class="d-flex mb-2">
-          <v-btn :disabled="model" @click="cheeted = true" :color="cheeted ? 'red' : 'white'">be a cheeter</v-btn>
+          <v-dialog v-model="packDlg" class="w-25">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props">扩展包</v-btn>
+            </template>
+            <v-card>
+              <v-card-title>
+                配置扩展包
+              </v-card-title>
+              <v-card-text>
+                <v-checkbox :disabled="i === 0" v-for="(p, i) in order.pack" :key="`pack-${i}`" v-model="packConfig[p]" :label="p"></v-checkbox>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn @click="applyPackChange()" color="red">确认(会刷新当前游戏)</v-btn>
+                <v-btn @click="genPackConfig()">随机两个</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+          <v-btn class="ml-1" :disabled="model" @click="cheeted = true" :color="cheeted ? 'red' : 'white'">be a cheeter</v-btn>
           <template v-if="cheeted">
             <v-dialog v-model="cheetChoose">
               <template v-slot:activator="{ props }">

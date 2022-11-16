@@ -278,8 +278,8 @@ const Data: Description = {
       ),
   德哈卡: c =>
     $()
-      .for(c.player)
-      .bindAfter('round-start', async () => {
+      .for(c)
+      .bind('round-start', async () => {
         if (c.player.glob.德哈卡) {
           c.player.glob.德哈卡 = 0
           await c.post('discover', {
@@ -290,7 +290,6 @@ const Data: Description = {
           })
         }
       })
-      .for(c)
       .bind('card-selled', async ({ selled }) => {
         if (selled.count('精华') >= 3) {
           await 获得N(c, '德哈卡分身', c.gold ? 4 : 2)

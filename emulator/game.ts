@@ -19,13 +19,17 @@ export class Game {
   pool: Pool
   round: number
 
-  constructor() {
+  constructor(pack: Record<string, boolean> = { 核心: true }) {
     this.bus = new Emitter()
     this.players = [new Player(this)]
-    this.pool = new Pool()
+    this.pool = new Pool(pack)
     this.round = 1
 
-    this.bus.wildcast(async (e, p: any) => {
+    this.bus.wildcastBefore(async (e, p) => {
+      console.log(e, p)
+    })
+
+    this.bus.wildcastAfter(async (e, p: any) => {
       if (p.player || p.card) {
         await (
           (p.player as Player) || (p.card as CardInstance).player

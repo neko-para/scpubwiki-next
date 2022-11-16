@@ -145,7 +145,7 @@ export class Player {
     this.refresh = async () => {}
     this.discover = async () => 0
 
-    this.bus.wildcast(async (e, p: any) => {
+    this.bus.wildcastAfter(async (e, p: any) => {
       if (p.card) {
         await (p.card as CardInstance).bus.async_emit(e as keyof AllBus, p)
       } else {
@@ -278,8 +278,11 @@ export class Player {
         })
       shuffle(spec)
       const firstUpgrade = c.upgrades.length === 0
-      const sp = spec.slice(0, firstUpgrade ? 2 : 1)
-      const item = shuffle(comm.concat(spec.slice(sp.length)))
+      const sp = spec.slice(
+        0,
+        firstUpgrade ? (c.template.attr.origin ? 3 : 2) : 1
+      )
+      const item = shuffle(comm)
         .slice(0, 4 - sp.length)
         .concat(sp)
       this.gas -= 2
