@@ -5,7 +5,7 @@ import { Pool } from './pool'
 import type { AllBus } from './types'
 
 export type GameBus = {
-  $next_round: {}
+  '$next-round': {}
 
   'round-start': {
     round: number
@@ -36,6 +36,8 @@ export class Game {
 
   log: Replay
 
+  logger: (ev: keyof AllBus, obj: any) => Promise<void>
+
   constructor(
     pack: Record<string, boolean>,
     poolSeed: string,
@@ -60,6 +62,8 @@ export class Game {
       msg: [],
     }
 
+    this.logger = async () => {}
+
     this.bus.wildcastBefore(async (e, p) => {
       console.log(e, p)
     })
@@ -76,7 +80,7 @@ export class Game {
       }
     })
 
-    this.bus.on('$next_round', async () => {
+    this.bus.on('$next-round', async () => {
       await this.bus.async_emit('round-end', {
         round: this.round,
       })
@@ -115,6 +119,7 @@ export class Game {
         mobj[k] = (obj as any)[k]
       }
     }
+    await this.logger(ev, mobj)
     this.log.msg.push({
       ev,
       obj: mobj,

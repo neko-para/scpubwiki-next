@@ -74,6 +74,62 @@ const discoverCancel = ref<(() => void) | null>(null)
 
 global.player = player
 
+const acts = ref<string[]>([])
+
+function put(str: string) {
+  if (acts.value.length > 10) {
+    acts.value.shift()
+  }
+  acts.value.push(str)
+}
+
+game.logger = async (ev, obj) => {
+  switch (ev) {
+    case '$buy-card':
+      put(`购买 ${player.store[obj.pos]?.name}`)
+      break
+    case '$cache-card':
+      put(`暂存 ${player.store[obj.pos]?.name}`)
+      break
+    case '$combine-card':
+      put(`三连 ${player.store[obj.pos]?.name}`)
+      break
+    case '$hand-combine-card':
+      put(`三连暂存区 ${player.hand[obj.pos]?.name}`)
+      break
+    case '$hand-enter-card':
+      put(`进场暂存区 ${player.hand[obj.pos]?.name}`)
+      break
+    case '$hand-sell-card':
+      put(`出售暂存区 ${player.hand[obj.pos]?.name}`)
+      break
+    case '$imr':
+      put(`I'm Rich!`)
+      break
+    case '$lock':
+      put(`锁定`)
+      break
+    case '$next-round':
+      put(`下一回合`)
+      break
+    case '$obtain-card':
+      put(`获得 ${obj.cardt.name}`)
+      break
+    case '$refresh':
+      put(`刷新`)
+      break
+    case '$sell-card':
+      put(`出售 ${player.pres[obj.pos]?.name}`)
+      break
+    case '$upgrade':
+      put(`升级酒馆 ${player.level + 1}`)
+      break
+    case '$upgrade-card':
+      put(`升级卡牌 ${player.pres[obj.pos]?.name}`)
+      break
+  }
+}
+
 player.choose = async () => {
   return new Promise<number>(resolve => {
     const f = async (p: { pos: number }) => {
@@ -213,17 +269,13 @@ emuBus.on('chooseItemDone', async () => {
   model.value = false
 })
 
-game.bus.async_emit('round-start', {
-  round: 1,
-})
-
 function requestNextRound() {
   if (player.lock) {
     game.poll('$lock', {
       player,
     })
   }
-  game.poll('$next_round', {})
+  game.poll('$next-round', {})
 }
 
 function requestUpgrade() {
@@ -370,11 +422,21 @@ function setSteping() {
 
 if (route.query.replay) {
   loadLog()
+} else {
+  game.poll('round-start', {
+    round: 1,
+  })
 }
 </script>
 
 <template>
   <div class="d-flex flex-column pa-1 h-100">
+    <v-card
+      style="position: fixed; right: 0; top: 0; width: 150px"
+      class="d-flex flex-column mt-1 mr-1"
+    >
+      <span v-for="(s, i) in acts" :key="`act-${i}`">{{ s }}</span>
+    </v-card>
     <div class="d-flex">
       <div class="d-flex flex-column">
         <div class="d-flex flex-column" :key="`res-${infoId}`">
@@ -525,15 +587,8 @@ if (route.query.replay) {
           </div>
         </div>
       </div>
-      <div class="d-flex flex-column ml-auto">
+      <div class="d-flex flex-column mr-auto">
         <div class="d-flex">
-          <emu-card-template
-            class="mr-2"
-            :pos="0"
-            type="store"
-            :card="undefined"
-            :key="`store-@-${storeId}`"
-          ></emu-card-template>
           <emu-card-template
             class="mr-2"
             :pos="i - 1"
