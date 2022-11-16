@@ -99,7 +99,7 @@ const Data: Description = {
   屠猎者: c =>
     $()
       .for(c)
-      .bind('round-end', () => 转换(c, [c.locate('刺蛇')], '刺蛇(精英)'))
+      .bind('round-end', () => 转换(c, c.locateSome(-1, '刺蛇'), '刺蛇(精英)'))
       .bind('upgraded', () =>
         获得(c, Array(c.gold ? 2 : 1).fill('刺蛇(精英)'))
       ),

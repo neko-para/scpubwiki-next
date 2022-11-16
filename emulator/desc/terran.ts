@@ -7,7 +7,7 @@ import {
 } from '../../data'
 import type { CardInstance } from '../card'
 import { type Description, InfrType } from '../types'
-import { $, Binder, shuffle, 左侧, 相邻两侧, 获得, 获得N, 转换 } from '../utils'
+import { $, Binder, 左侧, 相邻两侧, 获得, 获得N, 转换 } from '../utils'
 
 function 任务(
   card: CardInstance,
@@ -398,7 +398,7 @@ const Data: Description = {
       .bind('post-enter', () => c.announce(`任务: 0 / 3`))
       .for(c.player)
       .bind(
-        'sell-card',
+        'card-selled',
         任务(
           c,
           3,
@@ -490,7 +490,7 @@ const Data: Description = {
               r.push(...Array(us[unit]).fill(unit))
             }
             const n = c.gold ? 2 : 1
-            await 获得(c, shuffle(r).slice(0, n))
+            await 获得(c, c.player.shuffle(r).slice(0, n))
           }
         })
       ),

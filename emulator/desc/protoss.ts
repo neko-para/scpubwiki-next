@@ -10,7 +10,7 @@ import {
 } from '../../data'
 import type { CardInstance } from '../card'
 import type { Description } from '../types'
-import { Binder, 获得N, 相邻两侧, 获得, 转换, shuffle, $ } from '../utils'
+import { Binder, 获得N, 相邻两侧, 获得, 转换, $ } from '../utils'
 
 async function 折跃(card: CardInstance, unit: UnitKey[]) {
   await card.post('wrap', {
@@ -147,7 +147,7 @@ const Data: Description = {
             const us = card
               .locateX(-1, unit => canElite(unit) && !isHeavy(unit))
               .map(i => card.units[i])
-            shuffle(us)
+            c.player.shuffle(us)
             us.slice(0, c.gold ? 2 : 1).forEach(u => {
               unit.push(elited(card.take_unit(u) as UnitKey))
             })
@@ -161,7 +161,9 @@ const Data: Description = {
       .bind('round-end', () =>
         折跃(
           c,
-          Array(c.gold ? 2 : 1).fill(shuffle(['不朽者', '巨像', '掠夺者'])[0])
+          Array(c.gold ? 2 : 1).fill(
+            c.player.shuffle(['不朽者', '巨像', '掠夺者'])[0]
+          )
         )
       ),
   虚空舰队: c =>

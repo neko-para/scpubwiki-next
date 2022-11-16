@@ -1,6 +1,6 @@
 import { type Card, getCard } from '../data'
 import { AllCard, type CardKey } from '../data/pubdata'
-import { shuffle } from './utils'
+import { Shuffler } from './utils'
 import type { PossibleLevel } from './types'
 
 const poolCount: Record<PossibleLevel, number> = {
@@ -18,16 +18,18 @@ type HeapType = {
 
 export class Pool {
   rheap: HeapType
+  gen: Shuffler
 
-  constructor(pack: Record<string, boolean> = { 核心: true }) {
+  constructor(pack: Record<string, boolean>, seed: string) {
     this.rheap = {}
+    this.gen = new Shuffler(seed)
 
     AllCard.map(c => getCard(c)).forEach(card => {
       if (!card.pool || !pack[card.pack]) {
         return
       }
       if (card.attr.rare) {
-        if (Math.random() <= 0.15) {
+        if (this.gen.gen.float() <= 0.15) {
           this.rheap[card.name] = 1
         }
       } else {
@@ -59,9 +61,9 @@ export class Pool {
       throw `Heap is not enough!`
     }
     this.rheap = nh
-    shuffle(f)
+    this.gen.shuffle(f)
     if (f.length < count) {
-      shuffle(mf)
+      this.gen.shuffle(mf)
       f.push(...mf.slice(0, count - f.length))
       this.drop(mf.slice(count - f.length))
     } else {

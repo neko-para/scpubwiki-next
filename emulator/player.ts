@@ -7,9 +7,52 @@ import { InfrType } from './types'
 import type { AllBus, DescClearGen, PossibleLevel } from './types'
 import { Desc } from './desc'
 import { AllUpgrade } from '../data/pubdata'
-import { shuffle } from './utils'
+import { Shuffler } from './utils'
 
 export type PlayerBus = {
+  $upgrade: {
+    player: Player
+  }
+  $refresh: {
+    player: Player
+  }
+  '$obtain-card': {
+    player: Player
+    cardt: Card
+  }
+  '$buy-card': {
+    player: Player
+    pos: number
+  }
+  '$cache-card': {
+    player: Player
+    pos: number
+  }
+  '$sell-card': {
+    player: Player
+    pos: number
+  }
+  '$combine-card': {
+    player: Player
+    pos: number
+  }
+  '$upgrade-card': {
+    player: Player
+    pos: number
+  }
+  '$hand-enter-card': {
+    player: Player
+    pos: number
+  }
+  '$hand-sell-card': {
+    player: Player
+    pos: number
+  }
+  '$hand-combine-card': {
+    player: Player
+    pos: number
+  }
+
   upgraded: {
     player: Player
     level: number
@@ -17,43 +60,6 @@ export type PlayerBus = {
   refresh: {
     player: Player
   }
-  'obtain-card': {
-    player: Player
-    cardt: Card
-  }
-  'buy-card': {
-    player: Player
-    pos: number
-  }
-  'cache-card': {
-    player: Player
-    pos: number
-  }
-  'sell-card': {
-    player: Player
-    pos: number
-  }
-  'combine-card': {
-    player: Player
-    pos: number
-  }
-  'upgrade-card': {
-    player: Player
-    pos: number
-  }
-  'hand-enter-card': {
-    player: Player
-    pos: number
-  }
-  'hand-sell-card': {
-    player: Player
-    pos: number
-  }
-  'hand-combine-card': {
-    player: Player
-    pos: number
-  }
-
   'destroy-card': {
     player: Player
     destroy: CardInstance
@@ -119,12 +125,13 @@ export class Player {
 
   choose: () => Promise<number>
   refresh: (place: 'hand' | 'store' | 'present' | 'info') => Promise<void>
-  discover: (
-    item: (Card | Upgrade)[],
-    allowCancel: boolean
-  ) => Promise<number | false>
+  discover: (item: (Card | Upgrade)[], allowCancel: boolean) => Promise<number>
 
-  constructor(g: Game) {
+  shuffler: Shuffler
+
+  choices: number[]
+
+  constructor(g: Game, seed: string) {
     this.bus = new Emitter()
     this.game = g
     this.hand = Array(6).fill(null)
@@ -145,6 +152,10 @@ export class Player {
     this.refresh = async () => {}
     this.discover = async () => 0
 
+    this.shuffler = new Shuffler(seed)
+
+    this.choices = []
+
     this.bus.wildcastAfter(async (e, p: any) => {
       if (p.card) {
         await (p.card as CardInstance).bus.async_emit(e as keyof AllBus, p)
@@ -154,6 +165,14 @@ export class Player {
           return false
         })
       }
+    })
+
+    this.bus.on('$upgrade', async () => {
+      await this.upgrade()
+    })
+
+    this.bus.on('$refresh', async () => {
+      await this.do_refresh()
     })
 
     this.bus.on('round-start', async ({ round }) => {
@@ -176,7 +195,7 @@ export class Player {
       await this.refresh('info')
     })
 
-    this.bus.on('obtain-card', async ({ cardt }) => {
+    this.bus.on('$obtain-card', async ({ cardt }) => {
       for (let i = 0; i < 6; i++) {
         if (!this.hand[i]) {
           this.hand[i] = cardt
@@ -186,7 +205,7 @@ export class Player {
       await this.refresh('hand')
     })
 
-    this.bus.on('buy-card', async ({ pos }) => {
+    this.bus.on('$buy-card', async ({ pos }) => {
       if (!this.store[pos] || this.mine < 3 || !this.can_enter()) {
         return
       }
@@ -199,14 +218,14 @@ export class Player {
       await this.refresh('present')
     })
 
-    this.bus.on('cache-card', async ({ pos }) => {
+    this.bus.on('$cache-card', async ({ pos }) => {
       if (!this.store[pos] || this.mine < 3 || !this.can_cache()) {
         return
       }
       const cardt = this.store[pos] as Card
       this.mine -= 3
       this.store[pos] = null
-      await this.game.bus.async_emit('obtain-card', {
+      await this.game.bus.async_emit('$obtain-card', {
         player: this,
         cardt,
       })
@@ -214,7 +233,7 @@ export class Player {
       await this.refresh('store')
     })
 
-    this.bus.on('sell-card', async ({ pos }) => {
+    this.bus.on('$sell-card', async ({ pos }) => {
       if (!this.pres[pos]) {
         return
       }
@@ -227,7 +246,7 @@ export class Player {
       await this.refresh('present')
     })
 
-    this.bus.on('combine-card', async ({ pos }) => {
+    this.bus.on('$combine-card', async ({ pos }) => {
       if (!this.store[pos] || this.mine < 3) {
         return
       }
@@ -240,7 +259,7 @@ export class Player {
       await this.refresh('present')
     })
 
-    this.bus.on('upgrade-card', async ({ pos }) => {
+    this.bus.on('$upgrade-card', async ({ pos }) => {
       if (!this.pres[pos] || this.gas < 2) {
         return
       }
@@ -276,13 +295,13 @@ export class Player {
               break
           }
         })
-      shuffle(spec)
+      this.shuffle(spec)
       const firstUpgrade = c.upgrades.length === 0
       const sp = spec.slice(
         0,
         firstUpgrade ? (c.template.attr.origin ? 3 : 2) : 1
       )
-      const item = shuffle(comm)
+      const item = this.shuffle(comm)
         .slice(0, 4 - sp.length)
         .concat(sp)
       this.gas -= 2
@@ -298,7 +317,7 @@ export class Player {
       })
     })
 
-    this.bus.on('hand-enter-card', async ({ pos }) => {
+    this.bus.on('$hand-enter-card', async ({ pos }) => {
       if (!this.hand[pos] || !this.can_enter()) {
         return
       }
@@ -311,7 +330,7 @@ export class Player {
       await this.refresh('present')
     })
 
-    this.bus.on('hand-sell-card', async ({ pos }) => {
+    this.bus.on('$hand-sell-card', async ({ pos }) => {
       const cardt = this.hand[pos]
       if (!cardt) {
         return
@@ -325,7 +344,7 @@ export class Player {
       await this.refresh('hand')
     })
 
-    this.bus.on('hand-combine-card', async ({ pos }) => {
+    this.bus.on('$hand-combine-card', async ({ pos }) => {
       if (!this.hand[pos]) {
         return
       }
@@ -349,8 +368,10 @@ export class Player {
     })
 
     this.bus.on('discover', async ({ item, target, cancel }) => {
-      const rc = await this.discover(item, !!cancel)
-      if (rc === false) {
+      const rc = await this.game.queryChoice(this, async () => {
+        this.game.pollChoice(this, await this.discover(item, !!cancel))
+      })
+      if (rc === -1) {
         if (cancel) {
           await cancel()
         }
@@ -358,7 +379,7 @@ export class Player {
       }
       const cho = item[rc]
       if (cho.type === 'card') {
-        await this.game.bus.async_emit('obtain-card', {
+        await this.game.bus.async_emit('$obtain-card', {
           player: this,
           cardt: cho,
         })
@@ -378,7 +399,7 @@ export class Player {
     this.bus.after('wrap', async ({ unit, info }) => {
       if (!info.to) {
         const cs = this.pres.filter(c => c?.template.race === 'P')
-        shuffle(cs)
+        this.shuffle(cs)
         if (cs.length === 0) {
           return
         }
@@ -390,6 +411,10 @@ export class Player {
         unit,
       })
     })
+  }
+
+  shuffle<T>(arr: T[]): T[] {
+    return this.shuffler.shuffle(arr)
   }
 
   async enum_present(func: (card: CardInstance) => Promise<boolean | void>) {
@@ -527,7 +552,7 @@ export class Player {
     )
     if (card.upgrades.length < 5) {
       reward.push(
-        shuffle(
+        this.shuffle(
           AllUpgrade.map(getUpgrade)
             .filter(u => u.category === '3')
             .filter(u => !card.upgrades.includes(u.name))
@@ -551,7 +576,9 @@ export class Player {
       return false
     }
     const pos = cardt.attr.insert
-      ? await this.choose()
+      ? await this.game.queryChoice(this, async () => {
+          this.game.pollChoice(this, await this.choose())
+        })
       : this.pres.findIndex(card => !card)
     const ci = new CardInstance(this, cardt)
     await this.make_room(pos)

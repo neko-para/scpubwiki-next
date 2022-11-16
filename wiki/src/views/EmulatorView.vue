@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter, useRoute, type LocationQueryValue } from 'vue-router'
+import { deflateRaw, inflateRaw } from 'pako'
+import { Buffer } from 'buffer'
 import EmuCardTemplate from '@/components/EmuCardTemplate.vue'
 import EmuCard from '@/components/EmuCard.vue'
 import EmuDiscover from '@/components/EmuDiscover.vue'
@@ -8,8 +11,15 @@ import { AllCard, type CardKey } from '../../../data/pubdata'
 import { getCard, order, type Card, type Upgrade } from '../../../data'
 import { emuBus } from '@/bus'
 import global from '../data'
-import { useRouter, useRoute, type LocationQueryValue } from 'vue-router'
-import { shuffle } from '../../../emulator/utils'
+import type { Replay } from '../../../emulator/game'
+
+function shuffle<T>(array: T[]): T[] {
+  for (let i = array.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -25,12 +35,18 @@ function queryPack() {
   return pack
 }
 
+function querySeed() {
+  return route.query?.seed as LocationQueryValue || Math.floor(Math.random() * 1000000).toString()
+}
+
+const seed = ref(querySeed())
+
 const handId = ref(1)
 const storeId = ref(1)
 const presId = ref(1)
 const infoId = ref(1)
 
-const game = new Game(queryPack())
+const game = new Game(queryPack(), seed.value, [seed.value])
 const player = game.players[0]
 const discover = ref<(Card | Upgrade)[]>([])
 const discoverCancel = ref<(() => void) | null>(null)
@@ -66,13 +82,13 @@ player.refresh = async (place) => {
 }
 
 player.discover = async (items, allow) => {
-  return new Promise<number | false>(resolve => {
+  return new Promise<number>(resolve => {
     discover.value = items
     const f = async (p: { pos: number }) => {
       emuBus.off('chooseItemDone', f)
       discover.value = []
       discoverCancel.value = null
-      resolve(p.pos === -1 ? false : p.pos)
+      resolve(p.pos)
     }
     if (allow) {
       discoverCancel.value = () => {
@@ -87,49 +103,49 @@ player.discover = async (items, allow) => {
 }
 
 emuBus.on('requestBuy', async ({ pos }) => {
-  await game.bus.async_emit('buy-card', {
+  await game.poll('$buy-card', {
     player, pos
   })
 })
 
 emuBus.on('requestCache', async ({ pos }) => {
-  await game.bus.async_emit('cache-card', {
+  await game.poll('$cache-card', {
     player, pos
   })
 })
 
 emuBus.on('requestSell', async ({ pos }) => {
-  await game.bus.async_emit('sell-card', {
+  await game.poll('$sell-card', {
     player, pos
   })
 })
 
 emuBus.on('requestCombine', async ({ pos }) => {
-  await game.bus.async_emit('combine-card', {
+  await game.poll('$combine-card', {
     player, pos
   })
 })
 
 emuBus.on('requestUpgradeCard', async ({ pos }) => {
-  await game.bus.async_emit('upgrade-card', {
+  await game.poll('$upgrade-card', {
     player, pos
   })
 })
 
 emuBus.on('requestHandEnter', async ({ pos }) => {
-  await game.bus.async_emit('hand-enter-card', {
+  await game.poll('$hand-enter-card', {
     player, pos
   })
 })
 
 emuBus.on('requestHandSell', async ({ pos }) => {
-  await game.bus.async_emit('hand-sell-card', {
+  await game.poll('$hand-sell-card', {
     player, pos
   })
 })
 
 emuBus.on('requestHandCombine', async ({ pos }) => {
-  await game.bus.async_emit('hand-combine-card', {
+  await game.poll('$hand-combine-card', {
     player, pos
   })
 })
@@ -157,15 +173,19 @@ game.bus.async_emit('round-start', {
 })
 
 function requestNextRound() {
-  game.next_round()
+  game.poll('$next_round', {})
 }
 
 function requestUpgrade() {
-  player.upgrade()
+  game.poll('$upgrade', {
+    player
+  })
 }
 
 function requestRefresh() {
-  player.do_refresh()
+  game.poll('$refresh', {
+    player
+  })
 }
 
 const cheeted = ref(false)
@@ -175,7 +195,7 @@ const cheetChooseCard = ref('紧急部署')
 
 function cheetChoosed() {
   if (AllCard.includes(cheetChooseCard.value as CardKey)) {
-    game.bus.async_emit('obtain-card', {
+    game.poll('$obtain-card', {
       player,
       cardt: getCard(cheetChooseCard.value as CardKey)
     })
@@ -200,6 +220,7 @@ function applyPackChange() {
     name: 'emulator',
     query: {
       pack: Object.keys(packConfig.value).join(','),
+      seed: seed.value,
       time: (new Date()).getTime()
     }
   })
@@ -213,6 +234,57 @@ function genPackConfig() {
     res[p] = true
   })
   packConfig.value = res
+}
+
+function genSeed() {
+  seed.value = Math.floor(Math.random() * 1000000).toString()
+}
+
+const expDlg = ref(false)
+const impDlg = ref(false)
+
+function dump() {
+  return Buffer.from(deflateRaw(JSON.stringify(game.log))).toString('base64')
+}
+
+function copyLog() {
+  navigator.clipboard.writeText(dump())
+}
+
+const impBuf = ref('')
+
+function impLog() {
+  const log = JSON.parse(Buffer.from(inflateRaw(Buffer.from(impBuf.value, 'base64'))).toString('utf-8')) as Replay
+  router.push({
+    name: 'emulator',
+    query: {
+      pack: Object.keys(log.pack).join(','),
+      seed: log.gseed,
+      replay: impBuf.value,
+      time: (new Date()).getTime()
+    }
+  })
+}
+
+async function loadLog() {
+  const log = JSON.parse(Buffer.from(inflateRaw(Buffer.from(route.query.replay as string, 'base64'))).toString('utf-8')) as Replay
+  console.log(log)
+  player.choices.push(...log.choice[0])
+  for (const { ev, obj } of log.msg) {
+    const mobj: any = {}
+    for (const k in obj) {
+      if (k === 'player') {
+        mobj[k] = game.players[obj[k]]
+      } else {
+        mobj[k] = obj[k]
+      }
+    }
+    await game.poll(ev, obj)
+  }
+}
+
+if (route.query.replay) {
+  loadLog()
 }
 
 </script>
@@ -234,18 +306,46 @@ function genPackConfig() {
         <div class="d-flex mb-2">
           <v-dialog v-model="packDlg" class="w-25">
             <template v-slot:activator="{ props }">
-              <v-btn v-bind="props">扩展包</v-btn>
+              <v-btn v-bind="props">配置</v-btn>
             </template>
             <v-card>
               <v-card-title>
-                配置扩展包
+                配置
               </v-card-title>
               <v-card-text>
-                <v-checkbox :disabled="i === 0" v-for="(p, i) in order.pack" :key="`pack-${i}`" v-model="packConfig[p]" :label="p"></v-checkbox>
+                <v-text-field v-model="seed" label="种子"></v-text-field>
+                <v-checkbox hide-details :disabled="i === 0" v-for="(p, i) in order.pack" :key="`pack-${i}`" v-model="packConfig[p]" :label="p"></v-checkbox>
               </v-card-text>
               <v-card-actions>
                 <v-btn @click="applyPackChange()" color="red">确认(会刷新当前游戏)</v-btn>
-                <v-btn @click="genPackConfig()">随机两个</v-btn>
+                <v-btn @click="genPackConfig()">随机两个扩展包</v-btn>
+                <v-btn @click="genSeed()">随机种子</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+          <v-dialog v-model="expDlg" class="w-25">
+            <template v-slot:activator="{ props }">
+              <v-btn class="ml-1" v-bind="props">导出</v-btn>
+            </template>
+            <v-card>
+              <v-card-text>
+                <v-textarea readonly :value="dump()"></v-textarea>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn @click="copyLog()">复制</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+          <v-dialog v-model="impDlg" class="w-25">
+            <template v-slot:activator="{ props }">
+              <v-btn class="ml-1" v-bind="props">导入</v-btn>
+            </template>
+            <v-card>
+              <v-card-text>
+                <v-textarea v-model="impBuf"></v-textarea>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn @click="impLog()">确定</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>

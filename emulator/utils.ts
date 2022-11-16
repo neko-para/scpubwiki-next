@@ -1,14 +1,24 @@
 import type { Emitter } from '@nekosu/async-emitter'
+import { Random, RNG } from 'random'
 import { getUnit, isNormal, type UnitKey } from '../data'
 import type { CardInstance } from './card'
 import type { AllBus } from './types'
 
-export function shuffle<T>(array: T[]): T[] {
-  for (let i = array.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1))
-    ;[array[i], array[j]] = [array[j], array[i]]
+export class Shuffler {
+  gen: Random
+
+  constructor(seed: string) {
+    this.gen = new Random()
+    this.gen.use(seed as unknown as RNG)
   }
-  return array
+
+  shuffle<T>(array: T[]): T[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      let j = this.gen.int(0, i)
+      ;[array[i], array[j]] = [array[j], array[i]]
+    }
+    return array
+  }
 }
 
 export class Binder {

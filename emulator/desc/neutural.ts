@@ -17,7 +17,6 @@ import {
   右侧,
   获得N,
   获得,
-  shuffle,
   转换,
   左侧,
   相邻两侧,
@@ -175,10 +174,9 @@ const Data: Description = {
               })
             })
         })
-        for (const { card, index } of shuffle(choice).slice(
-          0,
-          c.gold ? 8 : 5
-        )) {
+        for (const { card, index } of c.player
+          .shuffle(choice)
+          .slice(0, c.gold ? 8 : 5)) {
           await 转换(card, [index], elited(card.units[index]))
         }
       }),
@@ -246,7 +244,7 @@ const Data: Description = {
             cs.push(card)
           }
         })
-        shuffle(cs)
+        c.player.shuffle(cs)
         for (const card of cs.slice(0, 2)) {
           await 夺取(c, card, true, true)
         }
@@ -310,7 +308,7 @@ const Data: Description = {
       .bind('post-enter', () =>
         左侧(c, async card => {
           if (card.template.pool) {
-            await c.post('obtain-card', {
+            await c.post('$obtain-card', {
               player: c.player,
               cardt: card.template,
             })
@@ -514,7 +512,7 @@ const Data: Description = {
       .for(c)
       .bind('obtain-upgrade', () =>
         获得(c, [
-          shuffle<UnitKey>([
+          c.player.shuffle<UnitKey>([
             '马拉什',
             '阿拉纳克',
             '利维坦',
@@ -544,7 +542,7 @@ const Data: Description = {
             }
             r.push(...Array(us[unit]).fill(unit))
           }
-          await 获得(c, shuffle(r).slice(0, c.gold ? 2 : 1))
+          await 获得(c, c.player.shuffle(r).slice(0, c.gold ? 2 : 1))
         }
       })
       .bind('refresh', async () => {
@@ -554,10 +552,9 @@ const Data: Description = {
         c.player.flag.死亡之握 = 1
         await 获得(
           c,
-          shuffle(c.units.filter(isNormal).filter(u => !isHero(u))).slice(
-            0,
-            c.gold ? 2 : 1
-          )
+          c.player
+            .shuffle(c.units.filter(isNormal).filter(u => !isHero(u)))
+            .slice(0, c.gold ? 2 : 1)
         )
       })
       .for(c.player)

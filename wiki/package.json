@@ -13,6 +13,8 @@
   "dependencies": {
     "@mdi/font": "5.9.55",
     "@nekosu/async-emitter": "^1.0.1",
+    "buffer": "^6.0.3",
+    "pako": "^2.1.0",
     "roboto-fontface": "*",
     "vue": "^3.2.41",
     "vue-router": "^4.1.5",
@@ -22,6 +24,7 @@
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
     "@types/node": "^16.11.68",
+    "@types/pako": "^2.0.0",
     "@types/webfontloader": "^1.0.0",
     "@vitejs/plugin-vue": "^3.1.2",
     "@vue/eslint-config-typescript": "^11.0.0",

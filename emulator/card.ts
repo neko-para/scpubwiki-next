@@ -13,7 +13,7 @@ import { AllUpgrade, type CardKey } from '../data/pubdata'
 import { Desc } from './desc'
 import type { Player } from './player'
 import { type AllBus, InfrType, type DescClearGen } from './types'
-import { shuffle, 价值最高, 相邻两侧, 获得, 获得N } from './utils'
+import { 价值最高, 相邻两侧, 获得, 获得N } from './utils'
 
 export type CardBus = {
   'obtain-unit': {
@@ -140,7 +140,8 @@ export class CardInstance {
     })
 
     this.bus.on('obtain-upgrade', async ({ upgrade }) => {
-      const u = upgrade || getUpgrade(shuffle(AllUpgrade.map(u => u))[0])
+      const u =
+        upgrade || getUpgrade(this.player.shuffle(AllUpgrade.map(u => u))[0])
       if (
         (!u.override && this.upgrades.includes(u.name)) ||
         this.upgrades.length >= 5
