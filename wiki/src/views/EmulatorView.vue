@@ -74,9 +74,6 @@ const discoverCancel = ref<(() => void) | null>(null)
 global.player = player
 
 player.choose = async () => {
-  if (pendingChoice.length > 0) {
-    return pendingChoice.shift() as number
-  }
   return new Promise<number>(resolve => {
     const f = async (p: { pos: number }) => {
       emuBus.off('chooseInsertDone', f)
@@ -84,10 +81,12 @@ player.choose = async () => {
     }
     emuBus.on('chooseInsertDone', f)
     emuBus.async_emit('chooseInsert', {}).then(async () => {
-      await doEta()
-      await emuBus.async_emit('chooseInsertDone', {
-        pos: pendingChoice.shift() as number,
-      })
+      if (pendingChoice.length > 0) {
+        await doEta()
+        await emuBus.async_emit('chooseInsertDone', {
+          pos: pendingChoice.shift() as number,
+        })
+      }
     })
   })
 }
@@ -127,10 +126,12 @@ player.discover = async (items, allow) => {
     }
     emuBus.on('chooseItemDone', f)
     emuBus.async_emit('chooseItem', {}).then(async () => {
-      await doEta()
-      await emuBus.async_emit('chooseItemDone', {
-        pos: pendingChoice.shift() as number,
-      })
+      if (pendingChoice.length > 0) {
+        await doEta()
+        await emuBus.async_emit('chooseItemDone', {
+          pos: pendingChoice.shift() as number,
+        })
+      }
     })
   })
 }
