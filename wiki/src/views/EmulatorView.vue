@@ -21,6 +21,19 @@ function shuffle<T>(array: T[]): T[] {
   return array
 }
 
+async function wait(time: number) {
+  if (time < 0) {
+    return
+  }
+  return new Promise(resolve => {
+    setTimeout(resolve, time)
+  })
+}
+
+function doEta() {
+  return wait(Number(route.query.eta || -1))
+}
+
 const route = useRoute()
 const router = useRouter()
 
@@ -46,6 +59,7 @@ function querySeed() {
 }
 
 const seed = ref(querySeed())
+const pendingChoice: number[] = []
 
 const handId = ref(1)
 const storeId = ref(1)
@@ -60,13 +74,21 @@ const discoverCancel = ref<(() => void) | null>(null)
 global.player = player
 
 player.choose = async () => {
+  if (pendingChoice.length > 0) {
+    return pendingChoice.shift() as number
+  }
   return new Promise<number>(resolve => {
     const f = async (p: { pos: number }) => {
       emuBus.off('chooseInsertDone', f)
       resolve(p.pos)
     }
     emuBus.on('chooseInsertDone', f)
-    emuBus.async_emit('chooseInsert', {})
+    emuBus.async_emit('chooseInsert', {}).then(async () => {
+      await doEta()
+      await emuBus.async_emit('chooseInsertDone', {
+        pos: pendingChoice.shift() as number,
+      })
+    })
   })
 }
 
@@ -104,7 +126,12 @@ player.discover = async (items, allow) => {
       }
     }
     emuBus.on('chooseItemDone', f)
-    emuBus.async_emit('chooseItem', {})
+    emuBus.async_emit('chooseItem', {}).then(async () => {
+      await doEta()
+      await emuBus.async_emit('chooseItemDone', {
+        pos: pendingChoice.shift() as number,
+      })
+    })
   })
 }
 
@@ -261,7 +288,7 @@ function genSeed() {
 
 const expDlg = ref(false)
 const impDlg = ref(false)
-const isEta = ref(false)
+const isEta = ref(-1)
 
 function dump() {
   return Buffer.from(deflateRaw(JSON.stringify(game.log))).toString('base64')
@@ -285,7 +312,7 @@ function impLog() {
       pack: Object.keys(log.pack).join(','),
       seed: log.gseed,
       replay: impBuf.value,
-      eta: isEta.value,
+      eta: (isEta.value ? 500 : -1).toString(),
       time: new Date().getTime(),
     },
   })
@@ -298,15 +325,11 @@ async function loadLog() {
     ).toString('utf-8')
   ) as Replay
   console.log(log)
-  game.loadChoice(0, log.choice[0])
-  const doEta = route.query.eta === 'true'
+  pendingChoice.push(...log.choice[0])
+  // game.loadChoice(0, log.choice[0])
   for (const msg of log.msg) {
     await game.loadMsg(msg)
-    if (doEta) {
-      await new Promise(resolve => {
-        setTimeout(resolve, 0)
-      })
-    }
+    await doEta()
   }
 }
 
@@ -402,7 +425,7 @@ if (route.query.replay) {
                 <v-checkbox
                   hide-details
                   v-model="isEta"
-                  label="加载时显示过程"
+                  label="加载延时"
                 ></v-checkbox>
               </v-card-actions>
             </v-card>
