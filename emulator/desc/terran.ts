@@ -168,7 +168,11 @@ const Data: Description = {
   飙车流: c =>
     $()
       .for(c)
-      .bind('post-enter', () => c.announce(`任务: 0 / 3`))
+      .bind('post-enter', async () => {
+        if (c.gold) {
+          c.announce(`任务: 0 / 3`)
+        }
+      })
       .apply(快产(c, () => 获得N(c, '秃鹫', c.gold ? 5 : 3)))
       .for(c.player)
       .bind(
@@ -185,8 +189,8 @@ const Data: Description = {
               }
             })
           },
-          ({ card }) => {
-            return card.template.race === 'T'
+          ({ target }) => {
+            return target.template.race === 'T'
           }
         )
       ),
