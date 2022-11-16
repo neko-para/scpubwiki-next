@@ -535,7 +535,7 @@ if (route.query.replay) {
             </template>
             <v-card>
               <v-card-text>
-                <v-textarea readonly :value="dump()"></v-textarea>
+                <v-textarea readonly hide-details :value="dump()"></v-textarea>
               </v-card-text>
               <v-card-actions>
                 <v-btn @click="copyLog()">复制</v-btn>
@@ -548,7 +548,7 @@ if (route.query.replay) {
             </template>
             <v-card>
               <v-card-text>
-                <v-textarea v-model="impBuf"></v-textarea>
+                <v-textarea v-model="impBuf" hide-details></v-textarea>
               </v-card-text>
               <v-card-actions>
                 <v-btn @click="impLog()">确定</v-btn>
