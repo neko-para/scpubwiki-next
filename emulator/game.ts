@@ -15,15 +15,17 @@ export type GameBus = {
   }
 }
 
+interface ReplayStep {
+  ev: keyof AllBus
+  obj: any
+}
+
 export interface Replay {
   pack: Record<string, boolean>
   gseed: string
   pseed: string[]
   choice: number[][]
-  msg: {
-    ev: keyof AllBus
-    obj: any
-  }[]
+  msg: ReplayStep[]
 }
 
 export class Game {
@@ -42,8 +44,8 @@ export class Game {
     // Only one player now
     this.bus = new Emitter()
     this.players = []
-    playerSeed.forEach(ps => {
-      this.players.push(new Player(this, ps))
+    playerSeed.forEach((ps, i) => {
+      this.players.push(new Player(this, ps, i))
     })
     this.pool = new Pool(pack, poolSeed)
     this.round = 1
@@ -108,7 +110,7 @@ export class Game {
     const mobj: any = {}
     for (const k in obj) {
       if (k === 'player') {
-        mobj[k] = this.p2i((obj as any)[k])
+        mobj[k] = (obj as any)[k].pos
       } else {
         mobj[k] = (obj as any)[k]
       }
@@ -118,5 +120,24 @@ export class Game {
       obj: mobj,
     })
     await this.bus.async_emit(ev, obj)
+  }
+
+  loadChoice(p: number, pos: number[]) {
+    const player = this.players[p] as Player
+    pos.forEach(ps => {
+      this.pollChoice(player, ps)
+    })
+  }
+
+  async loadMsg(msg: ReplayStep) {
+    const mobj: any = {}
+    for (const k in msg.obj) {
+      if (k === 'player') {
+        mobj[k] = this.players[(msg.obj as any)[k]]
+      } else {
+        mobj[k] = (msg.obj as any)[k]
+      }
+    }
+    await this.poll(msg.ev, msg.obj)
   }
 }

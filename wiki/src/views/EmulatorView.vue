@@ -298,17 +298,9 @@ async function loadLog() {
     ).toString('utf-8')
   ) as Replay
   console.log(log)
-  player.choices.push(...log.choice[0])
-  for (const { ev, obj } of log.msg) {
-    const mobj: any = {}
-    for (const k in obj) {
-      if (k === 'player') {
-        mobj[k] = game.players[obj[k]]
-      } else {
-        mobj[k] = obj[k]
-      }
-    }
-    await game.poll(ev, obj)
+  game.loadChoice(0, log.choice[0])
+  for (const msg of log.msg) {
+    await game.loadMsg(msg)
   }
 }
 
@@ -380,7 +372,9 @@ if (route.query.replay) {
           </v-dialog>
           <v-dialog v-model="expDlg" class="w-25">
             <template v-slot:activator="{ props }">
-              <v-btn class="ml-1" v-bind="props">导出</v-btn>
+              <v-btn class="ml-1" v-bind="props" :disabled="model || cheeted"
+                >导出</v-btn
+              >
             </template>
             <v-card>
               <v-card-text>

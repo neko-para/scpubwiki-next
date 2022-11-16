@@ -95,7 +95,7 @@ function getColor() {
         <template v-if="type === 'hand'">
           <v-btn
             v-if="canCombine"
-            :disabled="model"
+            :disabled="model || global.player?.mine as number < 3"
             variant="flat"
             @click="requestHandCombine()"
             color="yellow"
@@ -111,7 +111,7 @@ function getColor() {
         <template v-else-if="type === 'store'">
           <v-btn
             v-if="canCombine"
-            :disabled="model"
+            :disabled="model || global.player?.mine as number < 3"
             variant="flat"
             @click="requestCombine()"
             color="yellow"

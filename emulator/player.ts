@@ -108,6 +108,7 @@ const StoreCount: Record<PossibleLevel, number> = {
 export class Player {
   bus: Emitter<AllBus>
   game: Game
+  pos: number
 
   hand: (Card | null)[]
   store: (Card | null)[]
@@ -131,9 +132,11 @@ export class Player {
 
   choices: number[]
 
-  constructor(g: Game, seed: string) {
+  constructor(g: Game, seed: string, pos: number) {
     this.bus = new Emitter()
     this.game = g
+    this.pos = pos
+
     this.hand = Array(6).fill(null)
     this.store = Array(3).fill(null)
     this.pres = Array(7).fill(null)
@@ -175,7 +178,7 @@ export class Player {
       await this.do_refresh()
     })
 
-    this.bus.on('round-start', async ({ round }) => {
+    this.bus.on('round-start', async () => {
       this.flag = {}
       if (this.cost > 0) {
         this.cost -= 1
@@ -193,6 +196,7 @@ export class Player {
       this.lock = false
       await this.fill_store()
       await this.refresh('info')
+      await this.refresh('present')
     })
 
     this.bus.on('$obtain-card', async ({ cardt }) => {
