@@ -202,6 +202,11 @@ function requestRefresh() {
   })
 }
 
+function switchLock() {
+  player.lock = !player.lock
+  storeId.value += 1
+}
+
 const cheeted = ref(false)
 
 const cheetChoose = ref(false)
@@ -342,15 +347,9 @@ if (route.query.replay) {
             @click="requestRefresh()"
             >刷新</v-btn
           >
-          <v-btn
-            :disabled="model"
-            class="mr-1"
-            @click="
-              player.lock = !player.lock
-              storeId += 1
-            "
-            >{{ player.lock ? '解锁' : '锁定' }}</v-btn
-          >
+          <v-btn :disabled="model" class="mr-1" @click="switchLock()">{{
+            player.lock ? '解锁' : '锁定'
+          }}</v-btn>
         </div>
         <div class="d-flex mb-2">
           <v-dialog v-model="packDlg" class="w-25">
