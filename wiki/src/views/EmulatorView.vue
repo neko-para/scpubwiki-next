@@ -289,7 +289,7 @@ function genSeed() {
 
 const expDlg = ref(false)
 const impDlg = ref(false)
-const isEta = ref(-1)
+const isEta = ref(false)
 
 function dump() {
   return Buffer.from(deflateRaw(JSON.stringify(game.log))).toString('base64')

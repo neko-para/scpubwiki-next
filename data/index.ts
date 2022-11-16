@@ -49,7 +49,7 @@ export function getUpgrade(key: UpgradeKey) {
   return Upgrades.get(key) as Upgrade
 }
 export function canElite(key: UnitKey) {
-  return key + '(精英)' in AllUnit
+  return AllUnit.includes((key + '(精英)') as UnitKey)
 }
 export function elited(key: UnitKey) {
   return (key + '(精英)') as UnitKey
