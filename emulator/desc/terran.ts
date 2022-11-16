@@ -117,9 +117,13 @@ const Data: Description = {
         任务(c, 5, async () => {
           await c.post('discover', {
             player: c.player,
-            item: c.player.game.pool.discover(card => {
-              return card.level === c.player.level
-            }, 3),
+            item: c.player.game.pool.discover(
+              card => {
+                return card.level === c.player.level
+              },
+              3,
+              true
+            ),
           })
         })
       ),

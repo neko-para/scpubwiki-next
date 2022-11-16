@@ -284,9 +284,13 @@ const Data: Description = {
           c.player.glob.德哈卡 = 0
           await c.post('discover', {
             player: c.player,
-            item: c.player.game.pool.discover(c => {
-              return c.level < 5 && !!c.attr?.origin
-            }, 3),
+            item: c.player.game.pool.discover(
+              c => {
+                return c.level < 5 && !!c.attr?.origin
+              },
+              3,
+              true
+            ),
           })
         }
       })
