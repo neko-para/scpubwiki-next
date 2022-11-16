@@ -229,9 +229,9 @@ const Data: Description = {
         const rs: {
           [r in Race]?: true
         } = {}
-        await c.player.enum_present(
-          async card => (rs[card.template.race] = true)
-        )
+        await c.player.enum_present(async card => {
+          rs[card.template.race] = true
+        })
         if (rs.T && rs.P && rs.Z && rs.N) {
           await 获得N(c, '混合体毁灭者', c.gold ? 4 : 2)
         }
@@ -482,9 +482,9 @@ const Data: Description = {
         const rs: {
           [r in Race]?: true
         } = {}
-        await c.player.enum_present(
-          async card => (rs[card.template.race] = true)
-        )
+        await c.player.enum_present(async card => {
+          rs[card.template.race] = true
+        })
         if (rs.T && rs.P && rs.Z && rs.N) {
           await 获得N(c, '混合体巨兽', c.gold ? 2 : 1)
         }
