@@ -52,6 +52,9 @@ export type PlayerBus = {
     player: Player
     pos: number
   }
+  $imr: {
+    player: Player
+  }
 
   upgraded: {
     player: Player
@@ -356,6 +359,14 @@ export class Player {
       this.hand[pos] = null
       await this.combine(c)
       await this.refresh('hand')
+      await this.refresh('store')
+      await this.refresh('present')
+    })
+
+    this.bus.on('$imr', async () => {
+      this.mine = 999
+      this.gas = 999
+      await this.refresh('info')
       await this.refresh('store')
       await this.refresh('present')
     })

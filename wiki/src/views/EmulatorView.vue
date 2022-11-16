@@ -224,11 +224,9 @@ function cheetChoosed() {
 }
 
 function cheetResource() {
-  player.mine = 999
-  player.gas = 999
-  infoId.value += 1
-  storeId.value += 1
-  presId.value += 1
+  game.poll('$imr', {
+    player,
+  })
 }
 
 const packDlg = ref(false)
@@ -380,9 +378,7 @@ if (route.query.replay) {
           </v-dialog>
           <v-dialog v-model="expDlg" class="w-25">
             <template v-slot:activator="{ props }">
-              <v-btn class="ml-1" v-bind="props" :disabled="model || cheeted"
-                >导出</v-btn
-              >
+              <v-btn class="ml-1" v-bind="props" :disabled="model">导出</v-btn>
             </template>
             <v-card>
               <v-card-text>
