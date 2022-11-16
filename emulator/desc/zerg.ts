@@ -54,7 +54,6 @@ async function 注卵(card: CardInstance, unit: UnitKey[]) {
     return
   }
   let idx = await 虫卵牌位(card.player)
-  console.log(idx)
   if (idx === -1) {
     idx = card.player.pres.findIndex(c => !c)
     if (idx === -1) {

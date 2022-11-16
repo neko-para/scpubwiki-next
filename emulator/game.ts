@@ -91,10 +91,8 @@ export class Game {
     player: Player,
     activator: () => Promise<void> = async () => {}
   ) {
-    if (player.choices.length === 0) {
-      await activator()
-    }
-    return player.choices.shift() as number
+    await activator()
+    return player.choice
   }
 
   async poll<T extends keyof AllBus>(ev: T, obj: AllBus[T]) {

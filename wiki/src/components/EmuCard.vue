@@ -93,7 +93,11 @@ const infrKey: Record<InfrType, string> = {
   >
     <template v-if="card">
       <div class="d-flex">
-        <race-icon :race="card.template.race" class="mt-1"></race-icon>
+        <race-icon
+          :race="card.template.race"
+          :bg="getColor()"
+          class="mt-1"
+        ></race-icon>
         <span class="text-h5 ml-2 mt-2">{{ card.name }}</span>
         <span class="text-h5 mt-2 mr-4 ml-auto">{{ card.template.level }}</span>
       </div>

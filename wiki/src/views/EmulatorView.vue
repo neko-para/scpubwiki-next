@@ -352,7 +352,6 @@ function genSeed() {
 
 const expDlg = ref(false)
 const impDlg = ref(false)
-const isEta = ref(false)
 
 function dump() {
   return Buffer.from(deflateRaw(JSON.stringify(game.log))).toString('base64')
@@ -363,6 +362,7 @@ function copyLog() {
 }
 
 const impBuf = ref('')
+const etaChoice = ref('-1')
 
 function impLog() {
   const log = JSON.parse(
@@ -376,14 +376,15 @@ function impLog() {
       pack: Object.keys(log.pack).join(','),
       seed: log.gseed,
       replay: impBuf.value,
-      eta: (isEta.value ? 500 : -1).toString(),
+      eta: etaChoice.value,
       time: new Date().getTime(),
     },
   })
 }
 
-let nextStep: (() => Promise<void>) | null = null
-const doStep = ref<(() => void) | null>(null)
+let nextStep: (() => Promise<boolean>) | null = null
+const doStep = ref<((res: boolean) => void) | null>(null)
+const loading = ref(false)
 
 async function loadLog() {
   const log = JSON.parse(
@@ -394,6 +395,8 @@ async function loadLog() {
   console.log(log)
   if (eta < 0) {
     player.refresh = async () => {}
+  } else {
+    loading.value = true
   }
   for (const msg of log.msg) {
     if (msg.ev === '$choice') {
@@ -406,8 +409,8 @@ async function loadLog() {
     }
     await game.loadMsg(msg)
     await doEta()
-    if (nextStep) {
-      await nextStep()
+    if (nextStep && (await nextStep())) {
+      break
     }
   }
   if (eta < 0) {
@@ -416,6 +419,8 @@ async function loadLog() {
     refreshPlace('hand')
     refreshPlace('store')
     refreshPlace('present')
+  } else {
+    loading.value = false
   }
 }
 
@@ -427,7 +432,20 @@ function setSteping() {
   }
 }
 
-// setSteping()
+function clearSteping() {
+  nextStep = null
+  const f = doStep.value
+  doStep.value = null
+  f && f(false)
+}
+
+function endLoading() {
+  pendingChoice.splice(0)
+  nextStep = null
+  const f = doStep.value
+  doStep.value = null
+  f && f(true)
+}
 
 if (route.query.replay) {
   loadLog()
@@ -459,24 +477,30 @@ if (route.query.replay) {
           >
         </div>
         <div class="d-flex mb-2">
-          <v-btn :disabled="model" class="mr-1" @click="requestNextRound()"
+          <v-btn
+            :disabled="model || loading"
+            class="mr-1"
+            @click="requestNextRound()"
             >下一回合</v-btn
           >
           <v-btn
-            :disabled="model || player.cost > player.mine"
+            :disabled="model || loading || player.cost > player.mine"
             class="mr-1"
             @click="requestUpgrade()"
             >升级</v-btn
           >
           <v-btn
-            :disabled="model || player.mine < 1"
+            :disabled="model || loading || player.mine < 1"
             class="mr-1"
             @click="requestRefresh()"
             >刷新</v-btn
           >
-          <v-btn :disabled="model" class="mr-1" @click="switchLock()">{{
-            '锁定'
-          }}</v-btn>
+          <v-btn
+            :disabled="model || loading"
+            class="mr-1"
+            @click="switchLock()"
+            >{{ '锁定' }}</v-btn
+          >
         </div>
         <div class="d-flex mb-2">
           <v-dialog v-model="packDlg" class="w-25">
@@ -528,22 +552,27 @@ if (route.query.replay) {
               </v-card-text>
               <v-card-actions>
                 <v-btn @click="impLog()">确定</v-btn>
-                <v-checkbox
-                  hide-details
-                  v-model="isEta"
-                  label="加载延时"
-                ></v-checkbox>
+                <v-radio-group inline v-model="etaChoice" hide-details>
+                  <v-radio value="-1" label="无延时"></v-radio>
+                  <v-radio value="0" label="快速"></v-radio>
+                  <v-radio value="500" label="慢速"></v-radio>
+                </v-radio-group>
               </v-card-actions>
             </v-card>
           </v-dialog>
-          <v-btn class="ml-1" v-if="doStep" @click="doStep && doStep()"
+          <v-btn class="ml-1" v-if="loading && !doStep" @click="setSteping()"
+            >暂停</v-btn
+          >
+          <v-btn class="ml-1" v-if="doStep" @click="clearSteping()">继续</v-btn>
+          <v-btn class="ml-1" v-if="doStep" @click="doStep && doStep(false)"
             >步进</v-btn
           >
+          <v-btn class="ml-1" v-if="doStep" @click="endLoading()">停止</v-btn>
         </div>
         <div class="d-flex mb-2">
           <v-btn
             class="ml-1"
-            :disabled="model"
+            :disabled="model || loading"
             @click="cheeted = true"
             :color="cheeted ? 'red' : 'white'"
             >be a cheeter</v-btn
@@ -551,7 +580,7 @@ if (route.query.replay) {
           <template v-if="cheeted">
             <v-dialog v-model="cheetChoose">
               <template v-slot:activator="{ props }">
-                <v-btn :disabled="model" v-bind="props" class="ml-1">
+                <v-btn :disabled="model || loading" v-bind="props" class="ml-1">
                   获取卡牌
                 </v-btn>
               </template>
@@ -568,7 +597,10 @@ if (route.query.replay) {
                 </v-card-actions>
               </v-card>
             </v-dialog>
-            <v-btn :disabled="model" @click="cheetResource()" class="ml-1"
+            <v-btn
+              :disabled="model || loading"
+              @click="cheetResource()"
+              class="ml-1"
               >获取资源</v-btn
             >
           </template>

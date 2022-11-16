@@ -140,7 +140,7 @@ export class Player {
 
   shuffler: Shuffler
 
-  choices: number[]
+  choice: number
 
   constructor(g: Game, seed: string, pos: number) {
     this.bus = new Emitter()
@@ -167,7 +167,7 @@ export class Player {
 
     this.shuffler = new Shuffler(seed)
 
-    this.choices = []
+    this.choice = 0
 
     this.bus.wildcastAfter(async (e, p: any) => {
       if (p.card) {
@@ -185,7 +185,7 @@ export class Player {
     })
 
     this.bus.on('$choice', async ({ pos }) => {
-      this.choices.push(pos)
+      this.choice = pos
     })
 
     this.bus.on('$lock', async () => {
@@ -592,7 +592,7 @@ export class Player {
         )[0]
       )
     }
-    await this.bus.async_emit('discover', {
+    await this.game.bus.async_emit('discover', {
       player: this,
       item: reward,
       target: card,
