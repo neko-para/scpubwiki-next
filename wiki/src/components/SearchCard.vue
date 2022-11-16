@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { attr, getCard, getTerm, getUnit, getUpgrade, order, tr } from '../../../data'
+import {
+  attr,
+  getCard,
+  getTerm,
+  getUnit,
+  getUpgrade,
+  order,
+  tr,
+} from '../../../data'
 import type { PubNode } from '@/bus'
 import { wikiBus } from '@/bus'
-import { AllCard, AllTerm, AllUnit, AllUpgrade } from '../../../data/pubdata';
+import { AllCard, AllTerm, AllUnit, AllUpgrade } from '../../../data/pubdata'
 
 const type = ref('card')
 const race = ref('any')
@@ -15,7 +23,7 @@ const starCheck = ref<Record<number, boolean>>({
   4: true,
   5: true,
   6: true,
-  7: false
+  7: false,
 })
 
 let timer: number | null = null
@@ -64,7 +72,7 @@ function doSearch(): PubNode[] {
   return res
 }
 
-function updateTimer () {
+function updateTimer() {
   if (timer) {
     clearTimeout(timer)
   }
@@ -72,7 +80,7 @@ function updateTimer () {
     console.log('updated')
     const node = doSearch()
     wikiBus.emit('search', {
-      node
+      node,
     })
     len.value = Math.ceil(node.length / 8)
     page.value = 1
@@ -81,7 +89,7 @@ function updateTimer () {
 
 watch(page, () => {
   wikiBus.emit('searchPos', {
-    page: page.value
+    page: page.value,
   })
 })
 
@@ -93,7 +101,7 @@ watch(type, t => {
 })
 watch(race, updateTimer)
 watch(starCheck, updateTimer, {
-  deep: true
+  deep: true,
 })
 
 updateTimer()
@@ -108,15 +116,25 @@ updateTimer()
         <v-radio value="term" label="术语"></v-radio>
         <v-radio value="upgrade" label="升级"></v-radio>
       </v-radio-group>
-      
+
       <v-radio-group inline v-model="race" hide-details color="primary">
         <v-radio value="any" label="任意"></v-radio>
-        <v-radio v-for="(r, i) in getRace(type)" :key="`race-${i}`" :value="r" :label="tr[r]"></v-radio>
+        <v-radio
+          v-for="(r, i) in getRace(type)"
+          :key="`race-${i}`"
+          :value="r"
+          :label="tr[r]"
+        ></v-radio>
       </v-radio-group>
     </div>
     <div v-if="type === 'card'" class="d-flex flex-column">
       <div class="d-flex">
-        <v-checkbox v-for="i in 8" :key="`star-${i}`" v-model="starCheck[i - 1]" :label="`${i - 1}`"></v-checkbox>
+        <v-checkbox
+          v-for="i in 8"
+          :key="`star-${i}`"
+          v-model="starCheck[i - 1]"
+          :label="`${i - 1}`"
+        ></v-checkbox>
       </div>
     </div>
     <v-pagination :length="len" v-model="page" total-visible="5"></v-pagination>

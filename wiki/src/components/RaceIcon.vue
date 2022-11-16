@@ -5,7 +5,6 @@ import type { Race } from '../../../data/types'
 const props = defineProps<{
   race: Race
 }>()
-
 </script>
 
 <template>

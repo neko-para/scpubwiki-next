@@ -8,11 +8,16 @@ const props = defineProps<{
 }>()
 
 const elv = ref(5)
-
 </script>
 
 <template>
-  <v-card :elevation="elv" id="term" class="d-flex flex-column px-2" @mouseover="elv = 10" @mouseout="elv = 5">
+  <v-card
+    :elevation="elv"
+    id="term"
+    class="d-flex flex-column px-2"
+    @mouseover="elv = 10"
+    @mouseout="elv = 5"
+  >
     <div class="d-flex">
       <span class="text-h5 mt-2">{{ term.name }}</span>
     </div>
@@ -26,5 +31,4 @@ const elv = ref(5)
   width: 300px;
   height: 400px;
 }
-
 </style>

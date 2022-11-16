@@ -3,7 +3,16 @@ import { ref, computed } from 'vue'
 import NodeInfo from '@/components/NodeInfo.vue'
 import type { PubNode } from '@/bus'
 import { wikiBus } from '@/bus'
-import { AllCard, AllTerm, AllUnit, AllUpgrade, type CardKey, type TermKey, type UnitKey, type UpgradeKey } from '../../../data/pubdata'
+import {
+  AllCard,
+  AllTerm,
+  AllUnit,
+  AllUpgrade,
+  type CardKey,
+  type TermKey,
+  type UnitKey,
+  type UpgradeKey,
+} from '../../../data/pubdata'
 import { getCard, getTerm, getUnit, getUpgrade } from '../../../data'
 const nodes = ref<PubNode[]>([])
 
@@ -42,16 +51,25 @@ const range = computed(() => {
 const range2 = computed(() => {
   return nodes.value.slice(base.value + 4, base.value + 8)
 })
-
 </script>
 
 <template>
   <div class="d-flex mt-4">
-    <node-info class="ml-4" v-for="(p, i) in range" :key="`card-${i}`" :node="p"></node-info>
+    <node-info
+      class="ml-4"
+      v-for="(p, i) in range"
+      :key="`card-${i}`"
+      :node="p"
+    ></node-info>
     <node-info v-if="requ" class="ml-auto mr-4" :node="requ"></node-info>
   </div>
   <div class="d-flex mt-4">
-    <node-info class="ml-4" v-for="(p, i) in range2" :key="`card-${i}`" :node="p"></node-info>
+    <node-info
+      class="ml-4"
+      v-for="(p, i) in range2"
+      :key="`card-${i}`"
+      :node="p"
+    ></node-info>
     <node-info v-if="reqd" class="ml-auto mr-4" :node="reqd"></node-info>
   </div>
 </template>

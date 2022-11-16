@@ -13,10 +13,10 @@ const elv = ref(5)
 const target = {
   G: '地面单位',
   A: '空中单位',
-  GA: '空中和地面单位'
+  GA: '空中和地面单位',
 }
 
-function calcWeapon (wp: Weapon) {
+function calcWeapon(wp: Weapon) {
   const r: string[] = []
   r.push(`伤害: ${wp.damage}`)
   if (wp.multiple) {
@@ -28,7 +28,7 @@ function calcWeapon (wp: Weapon) {
   return r.join('\n')
 }
 
-function calcArmor (a: Armor) {
+function calcArmor(a: Armor) {
   const r: string[] = []
   r.push(`护甲: ${a.defense}`)
   if (a.speed) {
@@ -37,16 +37,21 @@ function calcArmor (a: Armor) {
   return r.join('\n')
 }
 
-function calcSArmor (a: SArmor) {
+function calcSArmor(a: SArmor) {
   const r: string[] = []
   r.push(`护甲: ${a.defense}`)
   return r.join('\n')
 }
-
 </script>
 
 <template>
-  <v-card :elevation="elv" id="unit" class="d-flex flex-column" @mouseover="elv = 10" @mouseout="elv = 5">
+  <v-card
+    :elevation="elv"
+    id="unit"
+    class="d-flex flex-column"
+    @mouseover="elv = 10"
+    @mouseout="elv = 5"
+  >
     <div class="d-flex">
       <race-icon :race="unit.race" class="mt-1"></race-icon>
       <span class="text-h5 ml-2 mt-2">{{ unit.name }}</span>
@@ -98,5 +103,4 @@ function calcSArmor (a: SArmor) {
   width: 300px;
   height: 400px;
 }
-
 </style>

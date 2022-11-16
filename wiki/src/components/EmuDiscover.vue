@@ -5,7 +5,7 @@ import RaceIcon from './RaceIcon.vue'
 import { emuBus } from '../bus'
 
 const props = defineProps<{
-  pos: number,
+  pos: number
   item: Card | Upgrade | null
 }>()
 
@@ -33,19 +33,31 @@ emuBus.on('chooseItemDone', async () => {
 
 function chooseThis() {
   emuBus.async_emit('chooseItemDone', {
-    pos: props.pos
+    pos: props.pos,
   })
 }
-
 </script>
 
 <template>
-  <v-card class="d-flex flex-column" v-if="item" id="item" :elevation="elv" @mouseover="elv = 10" @mouseout="elv = 5">
+  <v-card
+    class="d-flex flex-column"
+    v-if="item"
+    id="item"
+    :elevation="elv"
+    @mouseover="elv = 10"
+    @mouseout="elv = 5"
+  >
     <template v-if="item">
       <div class="d-flex">
-        <race-icon v-if="item.type === 'card'" :race="item.race" class="mt-1"></race-icon>
+        <race-icon
+          v-if="item.type === 'card'"
+          :race="item.race"
+          class="mt-1"
+        ></race-icon>
         <span class="text-h5 ml-2 mt-2">{{ item.name }}</span>
-        <span v-if="item.type === 'card'" class="text-h5 mt-2 mr-4 ml-auto">{{ item.level }}</span>
+        <span v-if="item.type === 'card'" class="text-h5 mt-2 mr-4 ml-auto">{{
+          item.level
+        }}</span>
       </div>
       <div class="d-flex mt-auto">
         <v-btn v-if="choose" variant="flat" @click="chooseThis()">这个</v-btn>
