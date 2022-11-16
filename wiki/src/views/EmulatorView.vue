@@ -263,6 +263,7 @@ function genSeed() {
 
 const expDlg = ref(false)
 const impDlg = ref(false)
+const isEta = ref(false)
 
 function dump() {
   return Buffer.from(deflateRaw(JSON.stringify(game.log))).toString('base64')
@@ -286,6 +287,7 @@ function impLog() {
       pack: Object.keys(log.pack).join(','),
       seed: log.gseed,
       replay: impBuf.value,
+      eta: isEta.value,
       time: new Date().getTime(),
     },
   })
@@ -299,8 +301,14 @@ async function loadLog() {
   ) as Replay
   console.log(log)
   game.loadChoice(0, log.choice[0])
+  const doEta = route.query.eta === 'true'
   for (const msg of log.msg) {
     await game.loadMsg(msg)
+    if (doEta) {
+      await new Promise(resolve => {
+        setTimeout(resolve, 0)
+      })
+    }
   }
 }
 
@@ -395,6 +403,11 @@ if (route.query.replay) {
               </v-card-text>
               <v-card-actions>
                 <v-btn @click="impLog()">确定</v-btn>
+                <v-checkbox
+                  hide-details
+                  v-model="isEta"
+                  label="加载时显示过程"
+                ></v-checkbox>
               </v-card-actions>
             </v-card>
           </v-dialog>
