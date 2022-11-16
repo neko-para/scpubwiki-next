@@ -13,6 +13,10 @@ export type PlayerBus = {
   $upgrade: {
     player: Player
   }
+  $choice: {
+    player: Player
+    pos: number
+  }
   $lock: {
     player: Player
   }
@@ -178,6 +182,10 @@ export class Player {
 
     this.bus.on('$upgrade', async () => {
       await this.upgrade()
+    })
+
+    this.bus.on('$choice', async ({ pos }) => {
+      this.choices.push(pos)
     })
 
     this.bus.on('$lock', async () => {
@@ -391,7 +399,10 @@ export class Player {
 
     this.bus.on('discover', async ({ item, target, cancel }) => {
       const rc = await this.game.queryChoice(this, async () => {
-        this.game.pollChoice(this, await this.discover(item, !!cancel))
+        await this.game.poll('$choice', {
+          player: this,
+          pos: await this.discover(item, !!cancel),
+        })
       })
       if (rc === -1) {
         if (cancel) {
@@ -599,7 +610,10 @@ export class Player {
     }
     const pos = cardt.attr.insert
       ? await this.game.queryChoice(this, async () => {
-          this.game.pollChoice(this, await this.choose())
+          await this.game.poll('$choice', {
+            player: this,
+            pos: await this.choose(),
+          })
         })
       : this.pres.findIndex(card => !card)
     const ci = new CardInstance(this, cardt)

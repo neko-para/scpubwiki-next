@@ -24,7 +24,6 @@ export interface Replay {
   pack: Record<string, boolean>
   gseed: string
   pseed: string[]
-  choice: number[][]
   msg: ReplayStep[]
 }
 
@@ -56,9 +55,6 @@ export class Game {
       pack,
       gseed: poolSeed,
       pseed: playerSeed,
-      choice: Array(playerSeed.length)
-        .fill(0)
-        .map(() => []),
       msg: [],
     }
 
@@ -101,15 +97,6 @@ export class Game {
     return player.choices.shift() as number
   }
 
-  p2i(player: Player) {
-    return this.players.indexOf(player)
-  }
-
-  pollChoice(player: Player, pos: number) {
-    this.log.choice[this.p2i(player)].push(pos)
-    player.choices.push(pos)
-  }
-
   async poll<T extends keyof AllBus>(ev: T, obj: AllBus[T]) {
     const mobj: any = {}
     for (const k in obj) {
@@ -125,13 +112,6 @@ export class Game {
       obj: mobj,
     })
     await this.bus.async_emit(ev, obj)
-  }
-
-  loadChoice(p: number, pos: number[]) {
-    const player = this.players[p] as Player
-    pos.forEach(ps => {
-      this.pollChoice(player, ps)
-    })
   }
 
   async loadMsg(msg: ReplayStep) {

@@ -127,6 +127,9 @@ game.logger = async (ev, obj) => {
     case '$upgrade-card':
       put(`升级卡牌 ${player.pres[obj.pos]?.name}`)
       break
+    case '$choice':
+      put(`选择 ${obj.pos}`)
+      break
   }
 }
 
@@ -389,12 +392,18 @@ async function loadLog() {
     ).toString('utf-8')
   ) as Replay
   console.log(log)
-  pendingChoice.push(...log.choice[0])
-  // game.loadChoice(0, log.choice[0])
   if (eta < 0) {
     player.refresh = async () => {}
   }
   for (const msg of log.msg) {
+    if (msg.ev === '$choice') {
+      pendingChoice.push(msg.obj.pos)
+    }
+  }
+  for (const msg of log.msg) {
+    if (msg.ev === '$choice') {
+      continue
+    }
     await game.loadMsg(msg)
     await doEta()
     if (nextStep) {
