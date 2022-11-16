@@ -400,6 +400,16 @@ export class Player {
     }
   }
 
+  value() {
+    let sum = 0
+    this.pres.forEach(p => {
+      if (p) {
+        sum += p.value()
+      }
+    })
+    return sum
+  }
+
   async upgrade() {
     if (this.level === 6) {
       return

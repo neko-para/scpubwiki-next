@@ -210,8 +210,12 @@ const Data: Description = {
       }),
   光复艾尔: c =>
     $()
-      .for(c.player)
+      .for(c)
       .bind('post-enter', () => c.announce('已展开'))
+      .bind('obtain-upgrade', async () => {
+        c.flag.已收起 = 1
+        await c.announce('已展开')
+      })
       .bind('card-selled', async ({ selled: card }) => {
         if (card === c || c.flag.已收起 || c.player.flag.光复艾尔) {
           return
@@ -231,11 +235,8 @@ const Data: Description = {
           await 获得(c, unit)
         }
       })
-      .bind('obtain-upgrade', async () => {
-        c.flag.已收起 = 1
-        await c.announce('已展开')
-      })
-      .bindAfter('sell-card', async () => {
+      .for(c.player)
+      .bindAfter('card-selled', async () => {
         c.player.flag.光复艾尔 = 0
       }),
   菲尼克斯: c =>

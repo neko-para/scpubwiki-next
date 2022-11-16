@@ -222,7 +222,7 @@ function genPackConfig() {
     <div class="d-flex">
       <div class="d-flex flex-column">
         <div class="d-flex flex-column" :key="`res-${infoId}`">
-          <span class="text-h6">回合 {{ game.round }} 等级 {{ player.level }} 升级 {{ player.cost }}</span>
+          <span class="text-h6">回合 {{ game.round }} 等级 {{ player.level }} 升级 {{ player.cost }} 总价值 {{ player.value() }}</span>
           <span class="text-h6">晶矿 {{ player.mine }} / {{ player.mineMax }} 瓦斯 {{ player.gas }} / 6</span>
         </div>
         <div class="d-flex mb-2">
