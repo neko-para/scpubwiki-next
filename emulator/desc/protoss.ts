@@ -215,7 +215,7 @@ const Data: Description = {
       .for(c)
       .bind('post-enter', () => c.announce('已展开'))
       .bind('obtain-upgrade', async () => {
-        c.flag.已收起 = 1
+        c.flag.已收起 = 0
         await c.announce('已展开')
       })
       .bind('card-selled', async ({ selled: card }) => {

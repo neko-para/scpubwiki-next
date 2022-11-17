@@ -484,7 +484,12 @@ if (route.query.replay) {
             >下一回合</v-btn
           >
           <v-btn
-            :disabled="model || loading || player.cost > player.mine"
+            :disabled="
+              model ||
+              loading ||
+              player.cost > player.mine ||
+              player.level === 6
+            "
             class="mr-1"
             @click="requestUpgrade()"
             >升级</v-btn
