@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import CardInfo from './CardInfo.vue'
 import type { Card } from '../../../data'
 import RaceIcon from './RaceIcon.vue'
 import { emuBus } from '../bus'
@@ -73,6 +74,12 @@ emuBus.on('chooseItemDone', async () => {
 function getColor() {
   return props.type === 'store' && global.player?.lock ? 'cyan' : 'white'
 }
+
+function showCard() {
+  emuBus.async_emit('showCard', {
+    card: props.card as Card,
+  })
+}
 </script>
 
 <template>
@@ -88,7 +95,12 @@ function getColor() {
     <template v-if="card">
       <div class="d-flex">
         <race-icon :race="card.race" class="mt-1"></race-icon>
-        <span class="text-h5 ml-2 mt-2">{{ card.name }}</span>
+        <span
+          class="text-h5 ml-2 mt-2"
+          @click="showCard()"
+          style="cursor: pointer"
+          >{{ card.name }}</span
+        >
         <span class="text-h5 mt-2 mr-4 ml-auto">{{ card.level }}</span>
       </div>
       <div class="d-flex mt-auto">

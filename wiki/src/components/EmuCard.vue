@@ -4,7 +4,7 @@ import ReferText from './ReferText.vue'
 import RaceIcon from './RaceIcon.vue'
 import type { CardInstance } from '../../../emulator'
 import { emuBus } from '../bus'
-import type { UnitKey } from '../../../data'
+import { getCard, type CardKey, type UnitKey } from '../../../data'
 import type { InfrType } from '../../../emulator/types'
 import global from '../data'
 
@@ -80,6 +80,14 @@ const infrKey: Record<InfrType, string> = {
   2: '高级科技实验室',
   3: '',
 }
+
+function showCard() {
+  if (props.card) {
+    emuBus.async_emit('showCard', {
+      card: getCard(props.card.name as CardKey),
+    })
+  }
+}
 </script>
 
 <template>
@@ -94,7 +102,12 @@ const infrKey: Record<InfrType, string> = {
     <template v-if="card">
       <div class="d-flex">
         <race-icon :race="card.template.race" class="mt-1"></race-icon>
-        <span class="text-h5 ml-2 mt-2">{{ card.name }}</span>
+        <span
+          class="text-h5 ml-2 mt-2"
+          style="cursor: pointer"
+          @click="showCard()"
+          >{{ card.name }}</span
+        >
         <span class="text-h5 mt-2 mr-4 ml-auto">{{ card.template.level }}</span>
       </div>
       <div class="d-flex flex-column ma-1 h-100">

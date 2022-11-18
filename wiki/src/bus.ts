@@ -48,4 +48,7 @@ export const emuBus: Emitter<{
   chooseItemDone: {
     pos: number
   }
+  showCard: {
+    card: Card
+  }
 }> = new Emitter()

@@ -6,6 +6,7 @@ import { Buffer } from 'buffer'
 import EmuCardTemplate from '@/components/EmuCardTemplate.vue'
 import EmuCard from '@/components/EmuCard.vue'
 import EmuDiscover from '@/components/EmuDiscover.vue'
+import CardInfo from '@/components/CardInfo.vue'
 import { Game } from '../../../emulator'
 import { AllCard, type CardKey } from '../../../data/pubdata'
 import { getCard, order, type Card, type Upgrade } from '../../../data'
@@ -454,16 +455,29 @@ if (route.query.replay) {
     round: 1,
   })
 }
+
+const showedCard = ref<Card | null>(null)
+
+emuBus.on('showCard', async ({ card }) => {
+  showedCard.value = card
+})
 </script>
 
 <template>
   <div class="d-flex flex-column pa-1 h-100">
-    <v-card
-      style="position: fixed; right: 0; top: 0; width: 150px"
-      class="d-flex flex-column mt-1 mr-1"
-    >
-      <span v-for="(s, i) in acts" :key="`act-${i}`">{{ s }}</span>
-    </v-card>
+    <div class="d-flex" style="position: fixed; right: 0; top: 0">
+      <card-info
+        v-if="showedCard"
+        :card="showedCard"
+        style="top: 150px"
+      ></card-info>
+      <v-card
+        style="width: 150px"
+        class="d-flex flex-column mt-1 mr-1 ml-1 align-self-start"
+      >
+        <span v-for="(s, i) in acts" :key="`act-${i}`">{{ s }}</span>
+      </v-card>
+    </div>
     <div class="d-flex">
       <div class="d-flex flex-column">
         <div class="d-flex flex-column" :key="`res-${infoId}`">

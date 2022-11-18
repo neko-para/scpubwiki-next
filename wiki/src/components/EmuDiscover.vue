@@ -36,6 +36,14 @@ function chooseThis() {
     pos: props.pos,
   })
 }
+
+function showCard() {
+  if (props.item?.type === 'card') {
+    emuBus.async_emit('showCard', {
+      card: props.item,
+    })
+  }
+}
 </script>
 
 <template>
@@ -54,7 +62,12 @@ function chooseThis() {
           :race="item.race"
           class="mt-1"
         ></race-icon>
-        <span class="text-h5 ml-2 mt-2">{{ item.name }}</span>
+        <span
+          class="text-h5 ml-2 mt-2"
+          style="cursor: pointer"
+          @click="showCard()"
+          >{{ item.name }}</span
+        >
         <span v-if="item.type === 'card'" class="text-h5 mt-2 mr-4 ml-auto">{{
           item.level
         }}</span>
